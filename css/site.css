@@ -16,6 +16,8 @@
   --coach-soft: #e9f0fc;
   --notes: #b4531f;
   --notes-soft: #fbeee5;
+  --jobs: #6b3fc4;
+  --jobs-soft: #efe9fb;
   --ok: #1d7a3d;
   --ok-soft: #e5f3ea;
   --warn: #8a5a00;
@@ -47,6 +49,8 @@
     --coach-soft: #19243a;
     --notes: #f0a272;
     --notes-soft: #33231a;
+    --jobs: #b9a0ff;
+    --jobs-soft: #261d3d;
     --ok: #6fcf8e;
     --ok-soft: #15291c;
     --warn: #e9b65c;
@@ -156,6 +160,10 @@ section + section { border-top: 1px solid var(--border); }
 .icon-badge svg { width: 20px; height: 20px; }
 .coach .icon-badge { background: var(--coach-soft); color: var(--coach); }
 .notes .icon-badge { background: var(--notes-soft); color: var(--notes); }
+.jobs .icon-badge { background: var(--jobs-soft); color: var(--jobs); }
+.card.jobs-card { margin-top: 20px; }
+.card.jobs-card .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; }
+@media (max-width: 720px) { .card.jobs-card .cols { grid-template-columns: 1fr; } }
 .loop-card { margin-top: 20px; display: flex; gap: 16px; align-items: flex-start; }
 .loop-card p { margin: 0; }
 
@@ -177,6 +185,7 @@ section + section { border-top: 1px solid var(--border); }
 .step svg { width: 20px; height: 20px; color: var(--muted); }
 .flow-coach .step svg { color: var(--coach); }
 .flow-notes .step svg { color: var(--notes); }
+.flow-jobs .step svg { color: var(--jobs); }
 .step h4 { font-size: .98rem; margin: 2px 0 0; }
 .step p { font-size: .88rem; color: var(--muted); margin: 0; }
 .step:not(:last-child)::after {
@@ -228,6 +237,7 @@ section + section { border-top: 1px solid var(--border); }
 .tag { font-family: var(--font); font-size: .72rem; font-weight: 700; letter-spacing: .02em; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); }
 .tag.coach { background: var(--coach-soft); color: var(--coach); border-color: transparent; }
 .tag.notes { background: var(--notes-soft); color: var(--notes); border-color: transparent; }
+.tag.jobs { background: var(--jobs-soft); color: var(--jobs); border-color: transparent; }
 .tag.live { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
 .code-steps { margin-top: 8px; font-size: .95rem; color: var(--fg-soft); }
 .code-steps strong { color: var(--fg); }

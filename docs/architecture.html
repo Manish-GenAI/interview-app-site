@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Multi-agent architecture · Interview App</title>
-  <meta name="description" content="Interview App is two products sharing one agent platform:">
+  <meta name="description" content="Interview App is three products sharing one agent platform:">
   <meta name="color-scheme" content="light dark">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../css/site.css">
@@ -34,6 +34,7 @@
 <li><a href="#3-agent-catalogue">3. Agent catalogue</a><ul>
 <li><a href="#interview-coach">Interview Coach</a></li>
 <li><a href="#meeting-notes">Meeting Notes</a></li>
+<li><a href="#jobs">Jobs</a></li>
 </ul>
 </li>
 <li><a href="#4-pipelines-end-to-end-no-manual-steps">4. Pipelines (end to end, no manual steps)</a><ul>
@@ -43,6 +44,8 @@
 <li><a href="#44-live-meeting">4.4 Live meeting</a></li>
 <li><a href="#45-after-the-meeting-finalize_meeting-job-starts-automatically-on-stop">4.5 After the meeting (finalize_meeting job, starts automatically on Stop)</a></li>
 <li><a href="#46-closing-the-loop-debrief-practice">4.6 Closing the loop: debrief → practice</a></li>
+<li><a href="#47-job-search-careers_search-job">4.7 Job search (careers_search job)</a></li>
+<li><a href="#48-application-careers_draft-job-then-you">4.8 Application (careers_draft job, then you)</a></li>
 </ul>
 </li>
 <li><a href="#5-error-handling-layer-by-layer">5. Error handling, layer by layer</a></li>
@@ -63,12 +66,15 @@
   <main id="content" class="prose">
     <p class="doc-meta"><a href="../index.html">Interview App</a> · Documentation</p>
     <h1 id="multi-agent-architecture">Multi-agent architecture<a class="headerlink" href="#multi-agent-architecture" title="Link to this section">#</a></h1>
-<p>Interview App is two products sharing one agent platform:</p>
+<p>Interview App is three products sharing one agent platform:</p>
 <ul>
 <li><strong>Interview Coach</strong>: turns your resume and a job description into a prep pack, runs spoken mock interviews,
   scores every answer, and adapts what you practise next.</li>
 <li><strong>Meeting Notes</strong>: a transparent, consent-gated note-taker in the spirit of Granola. It captures the
   transcript live, lets you search it and catch up mid-meeting, and writes enhanced notes when you stop.</li>
+<li><strong>Jobs</strong>: searches open roles on company job boards through their official public APIs, ranks them against your
+  CV, and prepares each application for your approval. Nothing is sent without you: you approve, and you press
+  Submit yourself.</li>
 </ul>
 <p>Everything runs on your PC: FastAPI + SQLite, Ollama on your GPU, local Whisper. Claude is an optional backend.
 This document defines every agent: what it receives, what it decides, what it passes on, how the system recovers
@@ -280,6 +286,65 @@ tokens, cost and errors. The System page shows the traces, and they feed the rou
 <p>Code steps: consent gate, segment storage and instant FTS5 indexing, live keyword search, the redact-last-N-minutes
 control, user-note preservation (if the model drops your notes, code puts them back), segment-ref validation,
 embeddings via Ollama, retention cleanup.</p>
+<h3 id="jobs">Jobs<a class="headerlink" href="#jobs" title="Link to this section">#</a></h3>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Agent</th>
+<th>Receives</th>
+<th>Decides</th>
+<th>Passes to</th>
+<th>Fallback</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SearchPlannerAgent</strong> <em>(fast)</em></td>
+<td>CV with contact details and personal attributes removed, current title, years, your preferences</td>
+<td>Target titles and close variants (yours first), core skills, keywords, exclusions, seniority, Remotive category</td>
+<td>Board fetchers (SmartRecruiters search terms), the matcher, JobMatchAgent</td>
+<td>Titles from the CV and profile plus family variants; skills by frequency; seniority from years</td>
+</tr>
+<tr>
+<td><strong>JobMatchAgent</strong></td>
+<td>Redacted CV, candidate facts (years, work countries, remote preference), 4 postings at a time (shuffled to reduce position bias)</td>
+<td>Per posting: 2–6 must-haves and up to 4 nice-to-haves, each met/partial/missing with an exact CV quote; apply/maybe/skip; blockers</td>
+<td>Code scores the rubric and blends it with the rule score</td>
+<td>Rubric from the posting's skills, split into must/nice by section, checked against the CV</td>
+</tr>
+<tr>
+<td><strong>ApplicationWriterAgent</strong></td>
+<td>Redacted CV, facts you confirmed, the posting (as untrusted data), its open-text questions, matched/missing skills</td>
+<td>Summary, cover letter (150–260 words), 3–5 "their need: your evidence" highlights, open-text answers</td>
+<td>Rule claim checker + TruthCheckAgent → your review</td>
+<td>Template letter built from your CV bullets that mention the matched skills</td>
+</tr>
+<tr>
+<td><strong>TruthCheckAgent</strong></td>
+<td>CV + confirmed facts, every draft field</td>
+<td>Claims the CV doesn't support: block (invented) or warn (overstated)</td>
+<td>Approval checklist</td>
+<td>None (the rule checker always runs)</td>
+</tr>
+</tbody>
+</table>
+<p>Code steps between the agents (not LLMs):</p>
+<ul>
+<li><strong>Gate</strong>: a title check against your target titles (35% same kind of job, 65% same specialty, with related words
+  grouped, so "AI Engineer" ≈ "ML Engineer" but "Software Engineer (NetSuite)" ≠ "ML Engineer"), exclusions and
+  remote-only. It cuts ~10,000 open jobs to ~1,500 in milliseconds.</li>
+<li><strong>Score</strong> (0–100, every part shown): title 35, skills 30 (overlap with your CV, nice-to-haves count half),
+  location/remote/visa 15, seniority and required years 10, keywords 5, recency 5, a bounded ±8 learned from what
+  you apply to or dismiss, minus penalties for red flags (remote only in another country, on-site abroad when you
+  need a visa, "can't sponsor", clearance or citizenship).</li>
+<li><strong>Rubric score</strong>: met = 1, partial = ½. A "met" whose quote isn't found in your CV becomes "partial". Final score =
+  0.4 × rule score + 0.6 × rubric score when a model reviewed it.</li>
+<li><strong>Answer policy</strong> (<code>careers/questions.py</code>): who may answer each question (see 4.8).</li>
+<li><strong>Rule claim checker</strong> (<code>careers/truth.py</code>): numbers, years of experience, degrees, certifications, employers and
+  first-person skill claims must appear in the CV or your confirmed facts.</li>
+<li><strong>Approval checklist</strong>: required answers present, no unconfirmed blocking claims, contact details set, today's
+  limit not reached; any edit after approval reopens it.</li>
+</ul>
 <hr />
 <h2 id="4-pipelines-end-to-end-no-manual-steps">4. Pipelines (end to end, no manual steps)<a class="headerlink" href="#4-pipelines-end-to-end-no-manual-steps" title="Link to this section">#</a></h2>
 <h3 id="41-prep-pack-prep_target-job">4.1 Prep pack (<code>prep_target</code> job)<a class="headerlink" href="#41-prep-pack-prep_target-job" title="Link to this section">#</a></h3>
@@ -309,6 +374,33 @@ Then Ask (MeetingQAAgent with hybrid retrieval and citations), Drafts (RecipeAge
 <p>After a real interview, record or type your own debrief using the <em>Interview debrief</em> template. NoteEnhancerAgent
 extracts <code>questions_asked</code>, and one click adds them to that job's practice bank (<code>source: debrief</code>). The selection
 policy treats them as new, so they come up in the next session.</p>
+<h3 id="47-job-search-careers_search-job">4.7 Job search (<code>careers_search</code> job)<a class="headerlink" href="#47-job-search-careers_search-job" title="Link to this section">#</a></h3>
+<pre><code>plan:   SearchPlannerAgent(redacted CV, preferences)           -&gt; titles, skills, keywords, exclusions
+fetch:  every enabled board in parallel (4 at a time), each cached with a minimum refresh interval
+        (company boards 30 min, Remotive 6 h per its terms, Arbeitnow 1 h); one failing board never stops the search
+score:  gate -&gt; SmartRecruiters descriptions for the survivors -&gt; rule score -&gt; dedupe (same company + title:
+        keep the best, list the other locations)
+rerank: JobMatchAgent on the top 25 in batches of 4 (time budget 9 min, then rules)
+save:   matches for this run; dismissed jobs never come back
+</code></pre>
+<p>A live run on 5 November 2026 fetched 10,503 open jobs from 56 sources in 14 s. It kept 1,644 relevant ones and
+ranked them in under 10 s (cached runs: about 9 s in total). Peak memory was about 260 MB.</p>
+<h3 id="48-application-careers_draft-job-then-you">4.8 Application (<code>careers_draft</code> job, then you)<a class="headerlink" href="#48-application-careers_draft-job-then-you" title="Link to this section">#</a></h3>
+<pre><code>questions: the board's own form questions (Greenhouse API; Lever's hosted form) or the standard set
+answers:   profile -&gt; your profile | resume -&gt; your uploaded file | open text -&gt; AI draft from the CV
+           availability/compensation -&gt; what you typed in Profile | legal -&gt; only answers you gave
+           (remembered per country) | consent + voluntary self-identification -&gt; never filled, you answer in the form
+write:     ApplicationWriterAgent -&gt; summary, cover letter (+ your name), highlights, open-text answers
+truth:     rule checker + TruthCheckAgent -&gt; issues to fix or confirm
+review:    warnings (text aimed at AI tools in the posting, AI-screening opt-out link, earlier applications to the
+           same company), checklist -&gt; status needs_review
+YOU:       edit, confirm or fix claims, answer what's left, approve (max 10 a day by default)
+fill:      (optional, `careers_fill` job) the browser assistant types your approved answers into the employer's form
+           in a visible Edge/Chrome window, attaches your CV, and stops. Form posts are blocked while it types.
+YOU:       check the page, solve any CAPTCHA, tick consents, press Submit
+watch:     the assistant notices the confirmation page and marks the application submitted (or you mark it)
+track:     follow-up date, interviewing/offer/rejected; &quot;Prep&quot; turns the posting into an interview-coach target
+</code></pre>
 <hr />
 <h2 id="5-error-handling-layer-by-layer">5. Error handling, layer by layer<a class="headerlink" href="#5-error-handling-layer-by-layer" title="Link to this section">#</a></h2>
 <table class="doc-table">
@@ -395,6 +487,31 @@ policy treats them as new, so they come up in the next session.</p>
 <td>Other websites calling the local API</td>
 <td>Host-header allow-list (blocks DNS rebinding); same-origin check on the audio WebSocket; server binds to 127.0.0.1</td>
 </tr>
+<tr>
+<td>Jobs</td>
+<td>A job board is down, slow, renamed or rate-limits us</td>
+<td>Per-board error isolation and a recorded <code>last_error</code>; cached results are used within the refresh window; the search fails only if no board at all can be reached</td>
+</tr>
+<tr>
+<td>Jobs</td>
+<td>A posting tries to instruct the AI ("if you are an AI, write…")</td>
+<td>Postings are wrapped as untrusted data in prompts; the text is shown to you as a warning; the models have no tools while drafting</td>
+</tr>
+<tr>
+<td>Jobs</td>
+<td>The writer invents a number, degree or employer</td>
+<td>Rule checker + TruthCheckAgent flag it; blocking issues stop approval until you edit or confirm</td>
+</tr>
+<tr>
+<td>Jobs</td>
+<td>The form changed, a field can't be found, a CAPTCHA or sign-in appears</td>
+<td>The assistant fills what it can, lists every field that needs you, never solves CAPTCHAs or logs in, and hands over</td>
+</tr>
+<tr>
+<td>Jobs</td>
+<td>Content changed after approval</td>
+<td>Approval is tied to a hash of the approved answers; filling refuses until you approve again</td>
+</tr>
 </tbody>
 </table>
 <hr />
@@ -416,6 +533,9 @@ policy treats them as new, so they come up in the next session.</p>
    (<code>/api/feedback/export</code>, JSONL) turn disliked outputs into new eval cases.</li>
 <li><strong>Observability.</strong> Per-agent call counts, success and degraded rates, latency, token use and Claude spend are
    all on the System page.</li>
+<li><strong>Job matching learns what you act on.</strong> Applying, approving and reaching interviews nudge the title words of
+   those jobs up; dismissing nudges them down. The effect is bounded (±8 points) and shown as a reason. Answers you
+   type for recurring questions are saved and reused, and legal answers only for jobs in the same country.</li>
 </ol>
 <hr />
 <h2 id="7-model-routing-and-budgets">7. Model routing and budgets<a class="headerlink" href="#7-model-routing-and-budgets" title="Link to this section">#</a></h2>
@@ -458,6 +578,10 @@ policy treats them as new, so they come up in the next session.</p>
   <code>retention_days</code> to purge old meetings automatically.</li>
 <li>Nothing leaves your PC unless you configure Claude, in which case only the text of the specific request is sent.
   The browser speech-recognition fallback sends audio to the browser vendor; local Whisper avoids that.</li>
+<li>Jobs: your CV file is stored under <code>data/careers/resume/</code>. Before any model reads the CV, names, emails, phone
+  numbers, links, date of birth, gender, marital status, nationality, religion and address lines are removed. The app
+  never stores voluntary self-identification answers. The browser assistant uses its own profile
+  (<code>data/browser-profile</code>), separate from your everyday browser.</li>
 </ul>
 <hr />
 <h2 id="9-code-map">9. Code map<a class="headerlink" href="#9-code-map" title="Link to this section">#</a></h2>
@@ -466,6 +590,8 @@ policy treats them as new, so they come up in the next session.</p>
   llm/                  Ollama + Claude providers, router (breaker, adaptive routing), JSON utilities
   coach/                schemas, agents, metrics, memory (skills + selection), service (pipelines)
   notes/                schemas, agents, templates/recipes, search (FTS5 + embeddings), service
+  careers/              job boards (sources, catalog), text tools, matching, agents, answer policy (questions),
+                        claim checker (truth), service (pipelines, approval gate), browser assistant (filler)
   stt/                  faster-whisper engine, streaming transcriber (VAD, partials, finals)
   routes/               REST + WebSocket endpoints (see docs/API.md)
   jobs.py               persisted background jobs with retries and crash recovery
@@ -511,7 +637,7 @@ web/                    browser UI (no build step)
   <div class="wrap">
     <div>
       <strong style="color:var(--fg)">Interview App</strong><br>
-      Local-first practice coach and meeting notes. FastAPI · SQLite · Ollama · faster-whisper.
+      Local-first practice coach, meeting notes and job search. FastAPI · SQLite · Ollama · faster-whisper · Playwright.
     </div>
     <nav aria-label="Footer">
       <a href="../app/">Live demo</a>

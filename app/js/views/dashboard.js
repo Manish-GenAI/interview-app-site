@@ -30,14 +30,38 @@ function healthBanner(health) {
   return parts;
 }
 
+function jobsCard(stats) {
+  if (!stats) return '';
+  const by = stats.by_status || {};
+  const n = (...keys) => keys.reduce((sum, k) => sum + Number(by[k] || 0), 0);
+  const review = n('needs_review');
+  const ready = n('approved', 'filled');
+  const started = Object.values(by).reduce((sum, v) => sum + Number(v || 0), 0);
+  let cta;
+  if (review) cta = html`<a class="btn btn-primary" href="#/jobs/applications?tab=review">Review ${review === 1 ? '1 application' : `${review} applications`}</a>`;
+  else if (ready) cta = html`<a class="btn btn-primary" href="#/jobs/applications?tab=ready">Submit ${ready === 1 ? '1 approved application' : `${ready} approved applications`}</a>`;
+  else cta = html`<a class="btn ${started ? 'btn-secondary' : 'btn-primary'}" href="#/jobs">Find jobs</a>`;
+  return html`<section class="card" aria-labelledby="dash-jobs">
+    <div class="card-head"><h2 id="dash-jobs">Jobs</h2><a href="#/jobs">Open Jobs</a></div>
+    ${started || stats.last_search_at ? html`<div class="grid-4">
+      <div class="stat"><span class="label">Waiting for your review</span><span class="value">${review}</span></div>
+      <div class="stat"><span class="label">Approved today</span><span class="value">${stats.approved_today || 0}<small class="subtle"> / ${stats.daily_limit ?? '–'}</small></span></div>
+      <div class="stat"><span class="label">Submitted</span><span class="value">${n('submitted', 'interviewing', 'offer', 'rejected')}</span></div>
+      <div class="stat"><span class="label">Matches from last search</span><span class="value">${Number(stats.postings ?? 0).toLocaleString()}</span></div>
+    </div>` : html`<p class="muted">Find openings that match your CV across company job boards. The app drafts each application; you review it, approve it and click Submit yourself.</p>`}
+    <div class="row mt-3">${cta}${stats.last_search_at ? html`<span class="subtle">Last search ${fmtRel(stats.last_search_at)}</span>` : ''}</div>
+  </section>`;
+}
+
 export default async function dashboard(root, { signal }) {
   document.title = 'Home · Interview App';
   mount(root, loading('Loading your dashboard…'));
-  const [health, targets, sessions, meetings] = await Promise.all([
+  const [health, targets, sessions, meetings, careers] = await Promise.all([
     getHealth().catch(() => null),
     api('/api/targets', { signal }).catch(() => []),
     api('/api/sessions', { signal }).catch(() => []),
     api('/api/meetings?limit=6', { signal }).catch(() => []),
+    api('/api/careers/stats', { signal }).catch(() => null),
   ]);
   const ready = byNewest(targets).filter((t) => t.status === 'ready');
   let progress = null;
@@ -62,6 +86,8 @@ export default async function dashboard(root, { signal }) {
       <a class="card card-link quick" href="#/meetings/new"><span class="q-icon" aria-hidden="true">📝</span><h2>New meeting notes</h2>
         <p class="muted">Transcribe a meeting (with everyone's knowledge) and get clean notes, decisions and action items.</p></a>
     </div>
+
+    ${jobsCard(careers)}
 
     ${focusTarget ? html`<section class="card">
       <div class="card-head"><h2>Due for practice</h2><span class="subtle">${focusTarget.title || 'Untitled target'}${focusTarget.company ? ` · ${focusTarget.company}` : ''}</span></div>

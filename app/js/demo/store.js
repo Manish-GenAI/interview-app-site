@@ -3,7 +3,7 @@
 
 export const PREFIX = 'ia-demo:';
 const TABLES = ['targets', 'questions', 'stories', 'sessions', 'turns', 'skills', 'meetings', 'segments', 'jobs',
-  'traces', 'feedback', 'eval_runs', 'meta'];
+  'traces', 'feedback', 'eval_runs', 'meta', 'careers', 'cr_sources', 'cr_postings', 'cr_apps'];
 const MAX_TRACES = 400;
 
 function readKey(key) {

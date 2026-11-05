@@ -1,7 +1,8 @@
 # Interview App - website and live demo
 
-This repository only hosts the published website for **Interview App**, a local-first interview practice coach
-and transparent meeting-notes tool. It is generated automatically; please don't edit it by hand.
+This repository only hosts the published website for **Interview App**, a local-first interview practice coach,
+transparent meeting-notes tool and job search where you approve and submit every application. It is generated
+automatically; please don't edit it by hand.
 
 - Website: https://manish-genai.github.io/interview-app-site/
 - Live demo (runs in your browser with built-in rules): https://manish-genai.github.io/interview-app-site/app/

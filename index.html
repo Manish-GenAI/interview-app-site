@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Interview App: practice coach and meeting notes</title>
-  <meta name="description" content="A local-first interview practice coach and transparent meeting-notes tool. Runs on your own PC with Ollama; Claude is optional. Try the in-browser demo or install it on Windows.">
-  <meta property="og:title" content="Interview App: practice coach and meeting notes">
-  <meta property="og:description" content="Spoken mock interviews with rubric scoring, plus consent-first meeting notes. Local AI on your GPU.">
+  <title>Interview App: practice coach, meeting notes and job search</title>
+  <meta name="description" content="A local-first interview practice coach, transparent meeting notes, and a CV-matched job search where you approve and submit every application. Runs on your own PC with Ollama; Claude is optional. Try the in-browser demo or install it on Windows.">
+  <meta property="og:title" content="Interview App: practice coach, meeting notes and job search">
+  <meta property="og:description" content="Spoken mock interviews with rubric scoring, consent-first meeting notes, and a CV-matched job search with human-approved applications. Local AI on your GPU.">
   <meta name="color-scheme" content="light dark">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/site.css">
@@ -35,6 +35,8 @@
     <symbol id="i-code" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5"/></g></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10.5-6.5z"/></g></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></g></symbol>
+    <symbol id="i-briefcase" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M8.5 7V5.5A1.5 1.5 0 0 1 10 4h4a1.5 1.5 0 0 1 1.5 1.5V7M3 12.5h18"/></g></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11M11 10.5V4.5a1.5 1.5 0 0 1 3 0v6M14 10.5V6a1.5 1.5 0 0 1 3 0v7.5c0 4-2.5 6.5-6 6.5-2.2 0-3.7-1-4.9-2.7L3.6 13.6a1.5 1.5 0 0 1 2.4-1.8L8 14"/></g></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></g></symbol>
   </defs>
 </svg>
@@ -62,12 +64,13 @@
       <div>
         <span class="eyebrow">Local-first · runs on your PC</span>
         <h1 id="hero-title">Interview App</h1>
-        <p class="lead">A practice coach for interviews and a transparent note-taker for meetings. A team of AI agents runs on your own PC with Ollama on your GPU. Claude is optional.</p>
+        <p class="lead">A practice coach for interviews, a transparent note-taker for meetings, and a job search that ranks openings against your CV and prepares each application for your approval. A team of AI agents runs on your own PC with Ollama on your GPU. Claude is optional.</p>
         <ul class="chips" aria-label="Highlights">
           <li>Spoken mock interviews</li>
           <li>Rubric scores with evidence</li>
           <li>Consent-first meeting notes</li>
-          <li>Private, on-device speech-to-text</li>
+          <li>CV-matched job search</li>
+          <li>You approve, you submit</li>
         </ul>
         <div class="cta">
           <a class="btn btn-primary" href="app/"><svg aria-hidden="true"><use href="#i-play"/></svg>Try the live demo</a>
@@ -87,8 +90,8 @@
     <div class="wrap">
       <div class="section-head">
         <span class="eyebrow">What it does</span>
-        <h2 id="what-title">Two tools, one agent platform</h2>
-        <p>Prepare for a specific job, practise out loud with feedback, and keep honest notes of the meetings you're allowed to record. All of it on your machine.</p>
+        <h2 id="what-title">Three tools, one agent platform</h2>
+        <p>Find the jobs that fit you, prepare for a specific one, practise out loud with feedback, and keep honest notes of the meetings you're allowed to record. All of it on your machine.</p>
       </div>
       <div class="grid-2">
         <article class="card coach">
@@ -110,9 +113,22 @@
           </ul>
         </article>
       </div>
+      <article class="card jobs jobs-card">
+        <h3><span class="icon-badge"><svg aria-hidden="true"><use href="#i-briefcase"/></svg></span>Jobs: search and apply, with you in charge</h3>
+        <div class="cols">
+          <ul>
+            <li><strong>Searches the source.</strong> Open roles come from 55 company job boards through their official public APIs (Anthropic, OpenAI, Databricks, Stripe, Razorpay, CRED, Meesho, Freshworks, Bosch and more). Paste any Greenhouse, Lever, Ashby or SmartRecruiters careers link to add a company. No LinkedIn or Indeed automation.</li>
+            <li><strong>Ranks by your CV.</strong> Every job gets a score you can read: title, skills from your CV, location, remote and visa fit, seniority and recency. An AI reviewer then checks the best ones requirement by requirement and quotes your CV as evidence. Quotes it can't find in your CV don't count.</li>
+          </ul>
+          <ul>
+            <li><strong>Drafts from facts.</strong> Each application gets a tailored cover letter and answers drafted only from your CV. A fact-checker flags any number, employer, degree or skill your CV doesn't support. Legal, consent and diversity questions are never answered by AI.</li>
+            <li><strong>You approve, you submit.</strong> You review and approve each one (10 a day by default). On request, a browser assistant fills the employer's own form in Edge or Chrome, attaches your CV and stops. You press Submit. It never solves CAPTCHAs or ticks consent boxes.</li>
+          </ul>
+        </div>
+      </article>
       <div class="card loop-card">
         <span class="icon-badge" style="background:var(--ok-soft);color:var(--ok)"><svg aria-hidden="true"><use href="#i-loop"/></svg></span>
-        <p><strong>The two connect.</strong> After a real interview, record or type your own debrief with the <em>Interview debrief</em> template. One click turns the questions you were asked into practice questions for that job.</p>
+        <p><strong>They connect.</strong> One click turns a job you applied for into an interview prep pack. After a real interview, record or type your own debrief with the <em>Interview debrief</em> template. One click turns the questions you were asked into practice questions for that job.</p>
       </div>
     </div>
   </section>
@@ -150,6 +166,19 @@
       </div>
 
       <div class="flow-block">
+        <h3 class="flow-title"><span class="tag jobs">Jobs</span>Find and apply</h3>
+        <ol class="flow n6 flow-jobs">
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-doc"/></svg></div><h4>Your CV</h4><p>Upload it once. Add where you can work and what you're looking for.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-search"/></svg></div><h4>Search</h4><p>About 10,000 open jobs from company boards, read through official APIs.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-score"/></svg></div><h4>Rank</h4><p>A readable score for each, then an AI check of the best against your CV.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-shield"/></svg></div><h4>Draft and fact-check</h4><p>Cover letter and answers from your CV. Unsupported claims are flagged.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-check"/></svg></div><h4>You approve</h4><p>Edit, answer the questions that are yours, approve. 10 a day by default.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-hand"/></svg></div><h4>You submit</h4><p>The browser assistant fills the form and stops. You press Submit.</p></li>
+        </ol>
+        <p class="flow-note"><svg aria-hidden="true"><use href="#i-loop"/></svg>Jobs you apply to or dismiss tune the next search. Answers you type are remembered, and legal ones only for the same country.</p>
+      </div>
+
+      <div class="flow-block">
         <h3 class="flow-title"><span class="tag live">Loop</span>Debrief into practice</h3>
         <ol class="flow n4">
           <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-person"/></svg></div><h4>Real interview</h4><p>You interview as yourself. The app isn't used during it.</p></li>
@@ -165,7 +194,7 @@
     <div class="wrap">
       <div class="section-head">
         <span class="eyebrow">The agents</span>
-        <h2 id="agents-title">14 specialists, each with one job</h2>
+        <h2 id="agents-title">18 specialists, each with one job</h2>
         <p>Every agent takes a typed input and returns a validated, typed output. Code passes results from one agent to the next. Each agent also has a rule-based fallback, so a pipeline always completes.</p>
       </div>
 
@@ -173,7 +202,7 @@
         <div class="diagram-scroll">
           <svg viewBox="0 0 960 392" role="img" aria-labelledby="dg-t dg-d">
             <title id="dg-t">How the parts fit together</title>
-            <desc id="dg-d">You use the browser UI. Requests go to orchestrators, which run the coach and notes pipelines with a persisted job runner. Audio is streamed to local speech-to-text, which feeds the transcript to the orchestrators. Orchestrators call 14 specialist agents and store data in SQLite with search. Agents call models through a provider router with circuit breakers, adaptive routing and a budget guard, which picks Ollama on the local GPU or the optional Claude API. If all providers fail, agents use built-in rules. Every run is written to traces, which feed routing statistics back to the router. Your feedback becomes guidance for the agents.</desc>
+            <desc id="dg-d">You use the browser UI. Requests go to orchestrators, which run the coach and notes pipelines with a persisted job runner. Audio is streamed to local speech-to-text, which feeds the transcript to the orchestrators. Orchestrators call 18 specialist agents and store data in SQLite with search. Agents call models through a provider router with circuit breakers, adaptive routing and a budget guard, which picks Ollama on the local GPU or the optional Claude API. If all providers fail, agents use built-in rules. Every run is written to traces, which feed routing statistics back to the router. Your feedback becomes guidance for the agents.</desc>
             <defs>
               <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dg-head"/></marker>
             </defs>
@@ -187,9 +216,9 @@
             <text class="dg-title" x="26" y="193">You</text><text class="dg-sub" x="26" y="213">browser UI</text>
             <rect class="dg-box" x="176" y="145" width="190" height="110" rx="10"/>
             <text class="dg-title" x="190" y="172">Orchestrators</text>
-            <text class="dg-sub" x="190" y="194">coach + notes pipelines</text><text class="dg-sub" x="190" y="212">persisted job runner</text><text class="dg-sub" x="190" y="230">resumes after restarts</text>
+            <text class="dg-sub" x="190" y="194">coach, notes, jobs</text><text class="dg-sub" x="190" y="212">persisted job runner</text><text class="dg-sub" x="190" y="230">resumes after restarts</text>
             <rect class="dg-box accent" x="402" y="145" width="190" height="110" rx="10"/>
-            <text class="dg-title" x="416" y="172">14 specialist agents</text>
+            <text class="dg-title" x="416" y="172">18 specialist agents</text>
             <text class="dg-sub" x="416" y="194">typed in → typed out</text><text class="dg-sub" x="416" y="212">schema-checked output</text><text class="dg-sub" x="416" y="230">repair, salvage, rules</text>
             <rect class="dg-box" x="628" y="145" width="160" height="110" rx="10"/>
             <text class="dg-title" x="642" y="172">Provider router</text>
@@ -249,7 +278,16 @@
           <article class="agent"><h4>RecipeAgent</h4><p class="role">Turns saved notes into ready-to-send drafts.</p><dl><dt>Receives</dt><dd>Saved notes + a recipe</dd><dt>Decides</dt><dd>The wording of a follow-up email, team summary or to-do list</dd><dt>Passes to</dt><dd>Drafts panel (copy)</dd></dl></article>
         </div>
       </div>
-      <p class="code-steps"><strong>Steps done in code, not by a model:</strong> delivery metrics (pace, filler words, STAR markers, "I" vs "we"), score calibration and quote checks, the per-competency skill memory and review schedule, question selection, the meeting consent gate, instant search indexing, and keeping your own notes intact. <a href="docs/architecture.html">Read the full architecture →</a></p>
+      <div class="agents-group">
+        <h3><span class="tag jobs">Jobs</span>Job search agents</h3>
+        <div class="grid-3">
+          <article class="agent"><h4>SearchPlannerAgent</h4><p class="role">Decides what to search for.</p><dl><dt>Receives</dt><dd>Your CV with contact details and personal attributes removed, your preferences</dd><dt>Decides</dt><dd>Target titles and close variants (yours first), core skills, keywords, exclusions, seniority</dd><dt>Passes to</dt><dd>Job-board fetchers, the matcher</dd></dl></article>
+          <article class="agent"><h4>JobMatchAgent</h4><p class="role">Reviews the best matches requirement by requirement.</p><dl><dt>Receives</dt><dd>Redacted CV and four postings at a time</dd><dt>Decides</dt><dd>Must-haves and nice-to-haves, each met, partial or missing, with an exact CV quote; apply, maybe or skip</dd><dt>Passes to</dt><dd>Code checks the quotes and computes the score</dd></dl></article>
+          <article class="agent"><h4>ApplicationWriterAgent</h4><p class="role">Drafts the application from your CV only.</p><dl><dt>Receives</dt><dd>Redacted CV, facts you confirmed, the posting (as untrusted data), its open-text questions</dd><dt>Decides</dt><dd>Summary, cover letter, highlights, open-text answers</dd><dt>Passes to</dt><dd>Fact-checkers, then your review</dd></dl></article>
+          <article class="agent"><h4>TruthCheckAgent</h4><p class="role">Fact-checks every claim.</p><dl><dt>Receives</dt><dd>Your CV and confirmed facts, the draft</dd><dt>Decides</dt><dd>Which claims are invented (blocking) or overstated (warning)</dd><dt>Passes to</dt><dd>The approval checklist, alongside a rule-based checker</dd></dl></article>
+        </div>
+      </div>
+      <p class="code-steps"><strong>Steps done in code, not by a model:</strong> delivery metrics (pace, filler words, STAR markers, "I" vs "we"), score calibration and quote checks, the per-competency skill memory and review schedule, question selection, the meeting consent gate, instant search indexing, keeping your own notes intact, job scoring, the rule that decides who may answer each application question, the claim checker, and the approval gate. <a href="docs/architecture.html">Read the full architecture →</a></p>
     </div>
   </section>
 
@@ -398,8 +436,8 @@
     <div class="wrap">
       <div class="section-head">
         <span class="eyebrow">Privacy &amp; responsible use</span>
-        <h2 id="privacy-title">Practise for the interview. Be honest in the meeting.</h2>
-        <p>It's built for preparation and transparent note-taking. There's no stealth mode, and it doesn't feed answers during live interviews or meetings.</p>
+        <h2 id="privacy-title">Practise for the interview. Be honest in the meeting and in every application.</h2>
+        <p>It's built for preparation, transparent note-taking and a truthful job search. There's no stealth mode, it doesn't feed answers during live interviews or meetings, and it never submits an application for you.</p>
       </div>
       <div class="grid-2">
         <div class="card">
@@ -408,6 +446,7 @@
             <li>Consent is confirmed before every meeting, a <strong>Transcribing</strong> indicator stays visible, and a disclosure line is ready to paste.</li>
             <li>Live hints exist only in practice sessions. During meetings you can only search or recap what was already said. AI Q&amp;A unlocks once the meeting is saved.</li>
             <li>It doesn't hide from screen sharing or recording, and it never joins calls as a bot.</li>
+            <li>Applications: every one is approved by you and submitted by you. Drafts come only from your CV and are fact-checked. Legal, consent and voluntary diversity questions are always yours, and text in a posting that's aimed at AI tools is shown to you.</li>
           </ul>
         </div>
         <div class="card">
@@ -416,6 +455,7 @@
             <li>Everything is stored locally. Audio is never stored, only text.</li>
             <li>Delete the last few minutes of a transcript at any time, delete whole meetings, or set retention days.</li>
             <li>Nothing leaves your PC unless you turn on Claude, and then only the text of each request is sent.</li>
+            <li>Before any model reads your CV, your name, contact details and personal attributes are removed. The app never stores diversity answers.</li>
           </ul>
         </div>
       </div>
@@ -435,6 +475,9 @@
       <details><summary>Where is my data stored?</summary><p>In the app's <code>data</code> folder, e.g. <code>D:\Interview APP\data</code>. It holds the database, your settings, your API key (if you add one) and downloaded speech models. Audio is never saved.</p></details>
       <details><summary>What does it cost?</summary><p>Running locally with Ollama costs nothing beyond your electricity. Claude is optional and billed by Anthropic per request. The app estimates spend and stops using Claude at your monthly budget.</p></details>
       <details><summary>Can I use it during a real interview?</summary><p>No. It's for preparing beforehand and debriefing afterwards. It has no live-answer feature and no stealth mode. Using hidden AI help in an interview misrepresents your abilities and usually breaks the hiring process's rules.</p></details>
+      <details><summary>Does it apply to jobs automatically?</summary><p>No. It finds and ranks jobs, drafts each application from your CV and fact-checks it, but you approve every application, and you press Submit on the employer's own form. The browser assistant only types the answers you approved and attaches your CV. It never submits, never solves CAPTCHAs, and never ticks consent boxes. There's a daily limit (10 by default), because a few well-matched, truthful applications do better than a flood of generic ones.</p></details>
+      <details><summary>Which job sites does it search?</summary><p>Company job boards on Greenhouse, Lever, Ashby and SmartRecruiters, through the public APIs their own career pages use. 55 companies are included (AI labs, Indian startups such as Razorpay, CRED and Meesho, and large tech and SaaS companies), and you can add any other by pasting its careers link. Remotive adds remote jobs, credited with a link back. It doesn't scrape or automate LinkedIn, Indeed or Naukri, because their terms forbid it. You can paste a job from there by hand.</p></details>
+      <details><summary>Will it answer visa, salary or diversity questions for me?</summary><p>No. Work authorisation and sponsorship are answered only with what you typed, remembered for jobs in the same country. Your salary expectation comes only from your profile, and salary history is left to you. Consents and voluntary self-identification (gender, race, veteran, disability) are always answered by you in the form, and the app never stores them.</p></details>
       <details><summary>Meeting audio isn't captured</summary><p>In the browser's share dialog, tick <em>Share tab audio</em> for browser-based calls. For the desktop Zoom or Teams apps, share <em>Entire screen</em> and tick <em>Share system audio</em>. Use headphones so the other side isn't picked up twice by your mic.</p></details>
     </div>
   </section>
@@ -444,7 +487,7 @@
   <div class="wrap">
     <div>
       <strong style="color:var(--fg)">Interview App</strong><br>
-      Local-first practice coach and meeting notes. FastAPI · SQLite · Ollama · faster-whisper.
+      Local-first practice coach, meeting notes and job search. FastAPI · SQLite · Ollama · faster-whisper · Playwright.
     </div>
     <nav aria-label="Footer">
       <a href="app/">Live demo</a>

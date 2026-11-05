@@ -5,6 +5,7 @@ import { html, mount, loading, toast, toastError, setBusy, sentence, $, on } fro
 const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
 const CLAUDE_MODELS = ['claude-opus-5-5', 'claude-sonnet-5-5', 'claude-haiku-5-5', 'claude-fable-5-1'];
 const WHISPER_MODELS = ['large-v3-turbo', 'large-v3', 'distil-large-v3.5', 'distil-large-v3', 'medium', 'small', 'base', 'tiny'];
+const CAREERS_DEFAULTS = { daily_application_limit: 10, rerank_top: 25, browser_channel: 'auto', fill_wait_minutes: 20 };
 
 function textField(id, label, value, { hint = '', type = 'text', list = '', placeholder = '', min, max, step } = {}) {
   return html`<div class="field"><label for="${id}">${label}</label>
@@ -36,6 +37,7 @@ export default async function settingsView(root, { signal }) {
     const t = s.stt || {};
     const co = s.coach || {};
     const n = s.notes || {};
+    const j = { ...CAREERS_DEFAULTS, ...(s.careers || {}) };
     const order = s.provider_order || ['ollama', 'claude'];
     const first = order[0] || 'ollama';
     const second = order[1] || '';
@@ -125,6 +127,18 @@ export default async function settingsView(root, { signal }) {
           </div>
         </section>
 
+        <section class="card stack">
+          <h2>Jobs</h2>
+          <p class="muted">How job searches are reviewed and how the browser assistant fills application forms. It never clicks Submit: you do.</p>
+          <div class="form-grid">
+            ${textField('j-limit', 'Daily application limit', j.daily_application_limit, { type: 'number', min: 1, max: 100, step: 1, hint: 'Approvals per day. Fewer, better-matched applications get more replies.' })}
+            ${textField('j-rerank', 'Jobs reviewed by AI per search', j.rerank_top, { type: 'number', min: 0, max: 200, step: 5, hint: 'The best matches by score get a requirement-by-requirement review by the model.' })}
+            ${selectField('j-browser', 'Browser for application forms', j.browser_channel, [['auto', 'Auto'], ['msedge', 'Microsoft Edge'], ['chrome', 'Google Chrome'], ['chromium', 'Chromium']],
+    { hint: 'Browser used to fill application forms. Auto = Edge on Windows, Chrome on Mac.' })}
+            ${textField('j-wait', 'Keep watching for your Submit (minutes)', j.fill_wait_minutes, { type: 'number', min: 1, max: 240, step: 1, hint: 'How long the filled form stays open for you to check and submit.' })}
+          </div>
+        </section>
+
         <div class="row" style="position:sticky;bottom:0;padding:12px 0;background:linear-gradient(transparent, var(--bg) 30%)">
           <button type="submit" class="btn btn-primary btn-lg">Save settings</button><span class="subtle" id="save-note"></span></div>
       </form>`);
@@ -163,6 +177,18 @@ export default async function settingsView(root, { signal }) {
         hints_enabled: checked('co-hints'), llm_hints: checked('co-llm-hints'), speak_questions: checked('co-speak'),
       },
       notes: { default_template: val('n-template'), retention_days: num('n-retention', (s.notes && s.notes.retention_days) || 0) },
+      careers: careersValues(),
+    };
+  }
+
+  function careersValues() {
+    const j = { ...CAREERS_DEFAULTS, ...(s.careers || {}) };
+    const whole = (id, fallback, lo) => Math.max(lo, Math.round(num(id, fallback)));
+    return {
+      daily_application_limit: whole('j-limit', j.daily_application_limit, 1),
+      rerank_top: whole('j-rerank', j.rerank_top, 0),
+      browser_channel: val('j-browser') || 'auto',
+      fill_wait_minutes: whole('j-wait', j.fill_wait_minutes, 1),
     };
   }
 

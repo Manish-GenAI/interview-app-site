@@ -6,6 +6,8 @@ import dashboard from './views/dashboard.js';
 import { prepList, prepDetail } from './views/prep.js';
 import { practiceSetup, practiceSession, practiceReport } from './views/practice.js';
 import progressView from './views/progress.js';
+import { jobsSearch, jobsSources, jobsProfile } from './views/jobs.js';
+import { applicationsList, applicationDetail } from './views/applications.js';
 import { meetingsList, meetingNew, meetingView } from './views/meetings.js';
 import systemView from './views/system.js';
 import settingsView from './views/settings.js';
@@ -17,6 +19,11 @@ const routes = [
   ['/practice', practiceSetup, 'practice'],
   ['/practice/:id', practiceSession, 'practice'],
   ['/practice/:id/report', practiceReport, 'practice'],
+  ['/jobs', jobsSearch, 'jobs'],
+  ['/jobs/sources', jobsSources, 'jobs'],
+  ['/jobs/profile', jobsProfile, 'jobs'],
+  ['/jobs/applications', applicationsList, 'jobs'],
+  ['/jobs/applications/:id', applicationDetail, 'jobs'],
   ['/progress', progressView, 'progress'],
   ['/meetings', meetingsList, 'meetings'],
   ['/meetings/new', meetingNew, 'meetings'],
@@ -65,6 +72,8 @@ async function render() {
   if (typeof current.cleanup === 'function') {
     try { current.cleanup(); } catch (err) { console.error(err); }
   }
+  // A dialog left open by the previous page (e.g. after the browser's Back button) must not cover the next one.
+  document.querySelectorAll('dialog[open]').forEach((d) => d.close('navigate'));
   setLeaveGuard(null);
   const controller = new AbortController();
   current = { controller, cleanup: null };

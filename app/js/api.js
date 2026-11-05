@@ -20,6 +20,7 @@ function detailText(body, fallback) {
       return loc ? `${loc}: ${e.msg}` : e.msg;
     }).join('; ');
   }
+  if (d && typeof d === 'object' && typeof (d.detail || d.message) === 'string') return d.detail || d.message;
   if (d) return JSON.stringify(d);
   return fallback;
 }
@@ -52,7 +53,9 @@ export async function api(path, { method = 'GET', body, form, signal, raw = fals
   if (!res.ok) {
     let parsed = null;
     try { parsed = await res.json(); } catch { /* not JSON */ }
-    throw new ApiError(res.status, detailText(parsed, res.statusText || `HTTP ${res.status}`));
+    const error = new ApiError(res.status, detailText(parsed, res.statusText || `HTTP ${res.status}`));
+    error.body = parsed; // e.g. 409 {detail, blockers}
+    throw error;
   }
   if (raw) return res;
   if (res.status === 204) return null;

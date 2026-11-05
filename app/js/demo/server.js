@@ -7,6 +7,7 @@ import {
 import { runAgent, addFeedback, feedbackSummary, feedbackExportJsonl, listTraces, agentsView } from './common.js';
 import * as coach from './coach.js';
 import * as notes from './notes.js';
+import { registerCareerRoutes, ensureCareersSeeded } from './careers.js';
 
 export const VERSION = '0.1.0';
 const DEMO_DETAIL = 'Demo mode: this version runs in your browser with built-in rules. Install the app to use local AI (Ollama) or Claude.';
@@ -32,6 +33,7 @@ const ENUMS = {
   'coach.persona': ['friendly', 'neutral', 'challenging'], 'stt.engine': ['auto', 'faster-whisper', 'browser', 'off'],
   'stt.device': ['auto', 'cuda', 'cpu'], 'ollama.think': ['off', 'on', 'auto'],
   'claude.smart_effort': ['low', 'medium', 'high', 'xhigh', 'max'], 'claude.fast_effort': ['low', 'medium', 'high', 'xhigh', 'max'],
+  'careers.browser_channel': ['auto', 'chrome', 'msedge', 'chromium'],
 };
 function putSettings(patch) {
   const p = JSON.parse(JSON.stringify(patch || {}));
@@ -238,11 +240,15 @@ route('GET', '/api/meetings/:id/export\\.md', ({ p }) => {
 });
 route('POST', '/api/meetings/:id/to-practice', ({ p, body }) => json(notes.toPractice(p.id, body.target_id)));
 
+// jobs (search and human-in-the-loop applications)
+registerCareerRoutes(route, json);
+
 let booted = false;
 function boot() {
   if (booted) return;
   booted = true;
   ensureSeeded();
+  ensureCareersSeeded();
   recoverJobs();
 }
 

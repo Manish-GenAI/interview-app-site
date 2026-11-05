@@ -36,6 +36,14 @@
 <li><a href="#5-browser-audio">5. Browser audio</a></li>
 <li><a href="#6-consent">6. Consent</a></li>
 <li><a href="#7-claude-api-optional-backend">7. Claude API (optional backend)</a></li>
+<li><a href="#8-job-search-and-applications-november-2026">8. Job search and applications (November 2026)</a><ul>
+<li><a href="#where-the-jobs-come-from">Where the jobs come from</a></li>
+<li><a href="#matching">Matching</a></li>
+<li><a href="#why-fewer-better-applications">Why "fewer, better" applications</a></li>
+<li><a href="#human-in-the-loop-design">Human-in-the-loop design</a></li>
+<li><a href="#legal-notes-not-legal-advice">Legal notes (not legal advice)</a></li>
+</ul>
+</li>
 </ul>
 </div>
 
@@ -181,13 +189,121 @@ retention timer, and no voiceprints.</p>
   supported models.</li>
 <li>Prompt caching is applied to system prompts. Spend is estimated from token usage and capped by a monthly budget.</li>
 </ul>
+<h2 id="8-job-search-and-applications-november-2026">8. Job search and applications (November 2026)<a class="headerlink" href="#8-job-search-and-applications-november-2026" title="Link to this section">#</a></h2>
+<h3 id="where-the-jobs-come-from">Where the jobs come from<a class="headerlink" href="#where-the-jobs-come-from" title="Link to this section">#</a></h3>
+<p>All of these were checked live on 5 November 2026 (read-only).</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Source</th>
+<th>Endpoint</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Greenhouse</td>
+<td><code>boards-api.greenhouse.io/v1/boards/{token}/jobs?content=true</code>; one job with <code>?questions=true</code></td>
+<td>Public GET, no key. <code>content</code> is entity-escaped HTML. Questions include field names and types (<code>input_text</code>, <code>textarea</code>, <code>input_file</code>, <code>multi_value_single_select</code>, <code>multi_value_multi_select</code>), plus <code>location_questions</code>, <code>compliance</code> (EEOC) and <code>demographic_questions</code>. <code>include_ai_disclaimer</code> and <code>ai_opt_out_request_url</code> show whether the employer screens with AI. <code>boards.greenhouse.io</code> now redirects to <code>job-boards.greenhouse.io</code>; <code>job-boards.greenhouse.io/embed/job_app?for={token}&amp;token={id}</code> serves the form even when the job page lives on the company's own site.</td>
+</tr>
+<tr>
+<td>Lever</td>
+<td><code>api.lever.co/v0/postings/{site}?mode=json</code></td>
+<td>Public, no full-text search, no questions in the API. Custom questions are in the hosted <code>/apply</code> page as JSON in hidden <code>cards[…][baseTemplate]</code> inputs; the app parses them when you start an application. <code>workplaceType</code> is <code>onsite</code>/<code>remote</code>/<code>hybrid</code>. robots.txt: <code>Crawl-delay: 1</code>.</td>
+</tr>
+<tr>
+<td>Ashby</td>
+<td><code>api.ashbyhq.com/posting-api/job-board/{org}?includeCompensation=true</code></td>
+<td>Public. <code>isRemote</code> is also true for hybrid jobs, so <code>workplaceType</code> is used instead. Questions are only in an internal GraphQL API that robots.txt disallows, so the app doesn't use it; the browser assistant reports any extra fields.</td>
+</tr>
+<tr>
+<td>SmartRecruiters</td>
+<td><code>api.smartrecruiters.com/v1/companies/{id}/postings?q=&amp;country=&amp;limit=&amp;offset=</code></td>
+<td>Public, has server-side search (used with the plan's titles because some boards list thousands of jobs). An unknown company returns 200 with <code>totalFound: 0</code>. Descriptions come from the per-posting endpoint.</td>
+</tr>
+<tr>
+<td>Remotive</td>
+<td><code>remotive.com/api/remote-jobs?category=</code></td>
+<td>The free API now returns a small sample (10 jobs). Terms: link back and credit Remotive, don't redistribute, at most ~4 fetches a day. The app caches it for 6 hours and shows the attribution.</td>
+</tr>
+<tr>
+<td>Arbeitnow</td>
+<td><code>arbeitnow.com/api/job-board-api?page=</code></td>
+<td>300 jobs a page, mostly Germany, <code>x-ratelimit-limit: 50</code>. Off by default.</td>
+</tr>
+<tr>
+<td>Not used</td>
+<td>LinkedIn, Indeed, Naukri, Glassdoor</td>
+<td>Their terms forbid scraping and automated applying. Jobs from there can be pasted in by hand.</td>
+</tr>
+</tbody>
+</table>
+<p>Not added yet (candidates): Jobicy (remote, last 7 days, no key), The Muse, Adzuna (free key; covers India), USAJOBS
+(US federal), Workable/Recruitee/Personio/Teamtailor feeds. The app ships with 55 verified company boards; 32 had
+roles in India on the day they were checked.</p>
+<h3 id="matching">Matching<a class="headerlink" href="#matching" title="Link to this section">#</a></h3>
+<ul>
+<li>A funnel like a recommender system: a cheap gate, then a transparent rule score, then an LLM review of the top
+  25, as in two-stage retrieval → rerank systems.</li>
+<li>The LLM fills a <strong>rubric</strong> (must-haves and nice-to-haves, each met/partial/missing with a CV quote). The final
+  number is computed <strong>in code</strong>, not taken from an LLM's 0–100 guess. This follows recent person–job-fit work that
+  scores against a rubric and calibrates (e.g. arXiv 2601.10321). Quotes are verified against the CV, so a
+  hallucinated "met" can't raise the score.</li>
+<li>Postings are shown to the model in shuffled order to reduce position bias, at temperature 0.</li>
+<li><strong>Fairness.</strong> Embedding and LLM rankers show name-based demographic bias. One study found models favoured
+  White-associated names in 85% of comparisons (arXiv 2407.20371, AIES 2024). So the CV is redacted (name, contact
+  details, date of birth, gender, marital status, nationality, religion, address) before any model reads it. The
+  app never infers nationality, visa status or gender. It gives no salary advice (LLMs have suggested lower salary
+  targets to women), so posted ranges are shown instead.</li>
+<li>Skills use the coach's vocabulary plus aliases (k8s → Kubernetes). A future step is ESCO (13,890 skills in
+  28 languages) and O*NET alternate titles.</li>
+</ul>
+<h3 id="why-fewer-better-applications">Why "fewer, better" applications<a class="headerlink" href="#why-fewer-better-applications" title="Link to this section">#</a></h3>
+<ul>
+<li>Application volume has exploded: LinkedIn reported about 11,000 applications a minute in mid-2025, up 45% in a
+  year. Greenhouse's 2025 AI in Hiring report calls it an "AI doom loop": 8% of job seekers think AI screening is
+  fair and 91% of US recruiters have seen candidate deception.</li>
+<li>AI-written cover letters weaken the signal employers get from tailoring (arXiv 2509.25054 found a 51% drop in the
+  link between tailoring and callbacks on a freelance platform; arXiv 2511.08785 estimates fewer high-ability hires).
+  In contrast, help that improves the writing of a real resume raised hires by 8% at 10% higher wages (NBER w30886).</li>
+<li>Employers now tag AI-assisted applications (Workable), cap applications per candidate (Greenhouse, Ashby), check
+  identity (Greenhouse + CLEAR), and put AI-use policies and attestations in the form itself.</li>
+<li>Auto-apply tools that submit at volume from their own servers get poor reviews for wrong answers and irrelevant
+  applications. The design here takes the opposite approach: a daily limit (10), grounded drafts, a truth check, and
+  the human pressing Submit.</li>
+</ul>
+<h3 id="human-in-the-loop-design">Human-in-the-loop design<a class="headerlink" href="#human-in-the-loop-design" title="Link to this section">#</a></h3>
+<p>Drawn from Anthropic's computer-use guidance and agent framework, OpenAI Operator, and Claude in Chrome:</p>
+<ul>
+<li>Ask a human to confirm anything with real-world consequences, and anything that needs affirmative consent
+  (terms, consents). The app never submits, and never ticks consents or attestations.</li>
+<li>Treat web content as untrusted. Postings are wrapped as data, AI-directed text is surfaced, and the drafting
+  models have no tools.</li>
+<li>Hand control back for logins, CAPTCHAs, email codes and unknown required fields. Never solve or bypass them.</li>
+<li>Use a dedicated browser profile. Chrome 136+ ignores remote-debugging switches on the default profile.</li>
+<li>Approval is tied to a hash of the approved answers. Any later edit reopens approval.</li>
+<li>Keep an audit trail: history events per application, plus a screenshot of the filled form before hand-over in
+  <code>data/careers/applications/{id}/filled.png</code>.</li>
+</ul>
+<h3 id="legal-notes-not-legal-advice">Legal notes (not legal advice)<a class="headerlink" href="#legal-notes-not-legal-advice" title="Link to this section">#</a></h3>
+<ul>
+<li>EEO self-identification is voluntary. Greenhouse forms can mark it required but always offer a decline option.
+  The app never fills or stores it.</li>
+<li>Salary history questions are banned in many US jurisdictions (for example, Virginia from 1 July 2026). Questions
+  about expectations are allowed. The app leaves salary history to you.</li>
+<li>Work authorisation and sponsorship answers have legal consequences, so the app uses only answers you gave for that
+  country.</li>
+<li>Data protection: an individual's own job search is personal use (GDPR Art. 2(2)(c); India's DPDP Act s.3(c)(i)).
+  A hosted service processing many users' CVs would be a controller or data fiduciary with full obligations. This
+  app is local-first.</li>
+</ul>
   </main>
 </div>
 <footer class="site-footer">
   <div class="wrap">
     <div>
       <strong style="color:var(--fg)">Interview App</strong><br>
-      Local-first practice coach and meeting notes. FastAPI · SQLite · Ollama · faster-whisper.
+      Local-first practice coach, meeting notes and job search. FastAPI · SQLite · Ollama · faster-whisper · Playwright.
     </div>
     <nav aria-label="Footer">
       <a href="../app/">Live demo</a>

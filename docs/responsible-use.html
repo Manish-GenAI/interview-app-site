@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Responsible use and privacy · Interview App</title>
-  <meta name="description" content="Interview App is built to help you prepare for interviews and to take transparent notes in meetings. It is deliberately not a tool for getting covert help ">
+  <meta name="description" content="Interview App is built to help you prepare for interviews, take transparent notes in meetings, and run a focused, honest job search. It is deliberately not">
   <meta name="color-scheme" content="light dark">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../css/site.css">
@@ -31,6 +31,7 @@
 <ul>
 <li><a href="#what-it-does">What it does</a></li>
 <li><a href="#what-it-deliberately-does-not-do">What it deliberately does not do</a></li>
+<li><a href="#job-applications-how-the-app-keeps-them-honest-and-yours">Job applications: how the app keeps them honest and yours</a></li>
 <li><a href="#recording-consent-not-legal-advice">Recording consent (not legal advice)</a></li>
 <li><a href="#privacy">Privacy</a></li>
 </ul>
@@ -45,8 +46,9 @@
   <main id="content" class="prose">
     <p class="doc-meta"><a href="../index.html">Interview App</a> · Documentation</p>
     <h1 id="responsible-use-and-privacy">Responsible use and privacy<a class="headerlink" href="#responsible-use-and-privacy" title="Link to this section">#</a></h1>
-<p>Interview App is built to help you <strong>prepare</strong> for interviews and to take <strong>transparent</strong> notes in meetings.
-It is deliberately not a tool for getting covert help during a live interview.</p>
+<p>Interview App is built to help you <strong>prepare</strong> for interviews, take <strong>transparent</strong> notes in meetings, and run a
+<strong>focused, honest job search</strong>. It is deliberately not a tool for getting covert help during a live interview, and
+not a tool for mass-applying on your behalf.</p>
 <h2 id="what-it-does">What it does<a class="headerlink" href="#what-it-does" title="Link to this section">#</a></h2>
 <ul>
 <li><strong>Practice coaching.</strong> It generates questions from your resume and a job description, runs spoken mock
@@ -57,6 +59,10 @@ It is deliberately not a tool for getting covert help during a live interview.</
   it writes enhanced notes, answers questions with citations and drafts follow-ups.</li>
 <li><strong>Interview debriefs.</strong> After a real interview, it captures <em>your own</em> recap and turns the questions you were
   asked into practice material.</li>
+<li><strong>Job search with you in charge.</strong> It reads open roles from company job boards through their official public
+  APIs, ranks them against your CV, and drafts a tailored cover letter and answers from your CV. A fact-checker
+  flags every claim your CV doesn't support. You review, edit and approve each application. If you want, a browser
+  assistant then types your approved answers into the employer's own form. <strong>You</strong> press Submit.</li>
 </ul>
 <h2 id="what-it-deliberately-does-not-do">What it deliberately does not do<a class="headerlink" href="#what-it-deliberately-does-not-do" title="Link to this section">#</a></h2>
 <ul>
@@ -69,6 +75,39 @@ It is deliberately not a tool for getting covert help during a live interview.</
 </ul>
 <p>Using AI assistance in a live interview without the interviewer's knowledge misrepresents your abilities. It also
 usually breaks the hiring process's rules. Practise with the coach, then interview as yourself.</p>
+<h2 id="job-applications-how-the-app-keeps-them-honest-and-yours">Job applications: how the app keeps them honest and yours<a class="headerlink" href="#job-applications-how-the-app-keeps-them-honest-and-yours" title="Link to this section">#</a></h2>
+<p>Recruiters now receive a flood of AI-generated applications. They respond with application limits, AI-detection
+flags and identity checks, and AI-written letters that all sound alike carry less weight than they used to. Fewer,
+better-matched, truthful applications work better. The Jobs module is built around that:</p>
+<ul>
+<li><strong>You approve every application, and you submit it.</strong> The app never sends anything to an employer by itself. The
+  browser assistant fills the form and stops before Submit. A guard blocks form submissions while it types. After
+  you approve, any change sends the application back for review.</li>
+<li><strong>A daily limit</strong> (10 approvals by default, adjustable in Settings) keeps the search focused.</li>
+<li><strong>Grounded drafts.</strong> Drafts use only your CV and the facts you confirm. A rule-based checker plus an AI
+  fact-checker flag invented numbers, employers, degrees, certifications, tools and inflated experience. You must
+  fix or confirm each blocking claim before you can approve.</li>
+<li><strong>Questions the AI never answers:</strong></li>
+<li>Work authorisation, visa sponsorship, criminal record, relatives, previous employment: you answer. Your answers
+    on sponsorship and authorisation are remembered for jobs in the same country only.</li>
+<li>Salary history: you answer. Your salary <em>expectation</em> comes only from what you typed.</li>
+<li>Consents, arbitration agreements, recording consent, AI-policy acknowledgements and truthfulness attestations:
+    you tick them yourself in the form.</li>
+<li>Voluntary self-identification (gender, race, veteran and disability status): never filled and never stored by
+    the app. Answering is optional, and "decline to self-identify" is always an option.</li>
+<li><strong>The employer's AI policy.</strong> If a posting contains instructions aimed at AI tools, the app shows them to you and
+  the draft ignores them. Read them and decide. Where an employer screens with AI and offers a human review (for
+  example Greenhouse's opt-out link), the app shows that link.</li>
+<li><strong>Official sources only.</strong> Jobs come from the public job-board APIs that company career pages use (Greenhouse,
+  Lever, Ashby, SmartRecruiters) and from aggregators that offer a public API under their terms (Remotive, with
+  attribution and a link back; Arbeitnow). The app does not scrape or automate LinkedIn, Indeed, Naukri or
+  Glassdoor; their terms forbid it. Paste a job from those sites by hand, and the app helps you prepare it.</li>
+<li><strong>No CAPTCHA solving, no logins, no account creation.</strong> If a form needs any of that, the assistant stops and hands
+  the page to you.</li>
+<li><strong>Fairness.</strong> Before any model reads your CV, the app removes your name, contact details and personal attributes
+  (date of birth, gender, marital status, nationality, religion, address). It never infers nationality, visa status
+  or gender. It gives no salary advice: it shows the posted pay range when there is one.</li>
+</ul>
 <h2 id="recording-consent-not-legal-advice">Recording consent (not legal advice)<a class="headerlink" href="#recording-consent-not-legal-advice" title="Link to this section">#</a></h2>
 <p>Laws differ by place, and calls often span several jurisdictions. The app asks you to confirm consent before every
 meeting and gives you a disclosure line to paste into the meeting chat.</p>
@@ -97,6 +136,12 @@ if anyone objects. Use headphones so the app doesn't capture other people's audi
 <li>Your API key is stored in <code>data/secrets.json</code> (or read from the <code>ANTHROPIC_API_KEY</code> environment variable) and is
   never returned by the API or shown in the UI.</li>
 <li>The server listens on <code>127.0.0.1</code> only and rejects requests addressed to other host names.</li>
+<li><strong>Jobs data:</strong> your CV file, profile, saved answers and applications stay in <code>data/</code>. Job searches send only
+  requests for public job listings. When you use Claude for drafting, the redacted CV text and the posting are sent
+  to Anthropic for that request. The browser assistant keeps its own profile in <code>data/browser-profile</code>. Delete that
+  folder to sign out of everything it used.</li>
+<li><strong>Data-protection laws:</strong> running your own job search is personal use (GDPR household exemption; India's DPDP Act
+  section 3(c)(i)). If you adapt this app to process other people's data, you take on a data controller's duties.</li>
 </ul>
   </main>
 </div>
@@ -104,7 +149,7 @@ if anyone objects. Use headphones so the app doesn't capture other people's audi
   <div class="wrap">
     <div>
       <strong style="color:var(--fg)">Interview App</strong><br>
-      Local-first practice coach and meeting notes. FastAPI · SQLite · Ollama · faster-whisper.
+      Local-first practice coach, meeting notes and job search. FastAPI · SQLite · Ollama · faster-whisper · Playwright.
     </div>
     <nav aria-label="Footer">
       <a href="../app/">Live demo</a>

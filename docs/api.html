@@ -54,6 +54,14 @@
 <li><a href="#post-apistttranscribe-multipart-file-webmwavoggmp3">POST /api/stt/transcribe (multipart file: webm/wav/ogg/mp3)</a></li>
 </ul>
 </li>
+<li><a href="#jobs-search-and-human-in-the-loop-applications">Jobs: search and human-in-the-loop applications</a><ul>
+<li><a href="#application-profile">Application profile</a></li>
+<li><a href="#search-preferences">Search preferences</a></li>
+<li><a href="#sources-company-job-boards-via-official-public-apis">Sources (company job boards via official public APIs)</a></li>
+<li><a href="#search-and-matches">Search and matches</a></li>
+<li><a href="#applications">Applications</a></li>
+</ul>
+</li>
 </ul>
 </div>
 
@@ -292,13 +300,126 @@ EnhancedNotes = {title, summary, sections: [{heading, bullets: [{text, source: &
 </ol>
 <h3 id="post-apistttranscribe-multipart-file-webmwavoggmp3"><code>POST /api/stt/transcribe</code> (multipart <code>file</code>: webm/wav/ogg/mp3)<a class="headerlink" href="#post-apistttranscribe-multipart-file-webmwavoggmp3" title="Link to this section">#</a></h3>
 <p>→ <code>{"text", "segments": [{"t0", "t1", "text"}], "duration_sec", "engine"}</code></p>
+<hr />
+<h2 id="jobs-search-and-human-in-the-loop-applications">Jobs: search and human-in-the-loop applications<a class="headerlink" href="#jobs-search-and-human-in-the-loop-applications" title="Link to this section">#</a></h2>
+<p>Every application passes a <strong>human approval gate</strong>. The app may fill a form in a visible browser, but it never
+clicks Submit. The user does. AI drafts only open-text answers, grounded in the CV. Legal and compensation
+questions are answered only from values the user typed (legal answers are remembered per country). Consent and
+voluntary self-identification (EEO) questions are never filled or stored: the user answers them in the form.</p>
+<h3 id="application-profile">Application profile<a class="headerlink" href="#application-profile" title="Link to this section">#</a></h3>
+<ul>
+<li><code>GET /api/careers/profile</code> → <code>Profile</code></li>
+<li><code>PUT /api/careers/profile</code> (partial <code>Profile</code>) → <code>Profile</code></li>
+<li><code>POST /api/careers/profile/resume</code> (multipart <code>file</code>: .pdf .docx .txt .md) → <code>Profile</code> (stores the file under <code>data/</code>,
+  extracts <code>resume_text</code>)</li>
+<li><code>POST /api/careers/profile/import-target</code> <code>{"target_id"}</code> → <code>Profile</code> (copies the resume text from a coach target)</li>
+</ul>
+<pre><code class="language-text">Profile = {full_name, first_name, last_name, email, phone, location, country, linkedin_url, github_url, portfolio_url,
+           current_company, current_title, years_experience, notice_period, earliest_start,
+           work_authorized_countries: [str], needs_sponsorship: bool|null, salary_expectation, willing_to_relocate: bool|null,
+           extra_facts,                      # true facts not in the CV; the truth check accepts them
+           resume_text, resume_file: {name, size, uploaded_at}|null,
+           saved_answers: {question_label: answer},   # answers the user typed and approved, reused next time;
+                                                      # legal ones also as &quot;Needs visa sponsorship in India&quot; etc.
+           updated_at}
+</code></pre>
+<h3 id="search-preferences">Search preferences<a class="headerlink" href="#search-preferences" title="Link to this section">#</a></h3>
+<ul>
+<li><code>GET /api/careers/preferences</code> / <code>PUT /api/careers/preferences</code> (partial) →
+  <code>{titles: [str], keywords: [str], exclude_keywords: [str], locations: [str], remote: "any|remote_only|onsite_ok",
+    seniority: [str], min_score: 0-100, max_results: 10-500, aggregators: {remotive: bool, arbeitnow: bool}}</code>.
+  Defaults: <code>remote: "onsite_ok"</code> (remote, or on-site in your locations), <code>min_score: 45</code>, <code>max_results: 150</code>,
+  Remotive on, Arbeitnow off. Empty <code>titles</code>/<code>locations</code>/<code>seniority</code> are worked out from the CV and profile.</li>
+</ul>
+<h3 id="sources-company-job-boards-via-official-public-apis">Sources (company job boards via official public APIs)<a class="headerlink" href="#sources-company-job-boards-via-official-public-apis" title="Link to this section">#</a></h3>
+<ul>
+<li><code>GET /api/careers/sources</code> → <code>[{id, kind: "greenhouse|lever|ashby|smartrecruiters", token, name, enabled, last_fetched,
+  last_error, job_count, tags}]</code>. On first use, 55 verified boards are added and enabled.</li>
+<li><code>POST /api/careers/sources</code> <code>{"kind", "token", "name"?}</code> → <code>201 Source</code> (checked live; <code>400</code> if the board isn't found)</li>
+<li><code>PUT /api/careers/sources/{id}</code> <code>{"enabled"?, "name"?}</code> → <code>Source</code></li>
+<li><code>DELETE /api/careers/sources/{id}</code> → <code>{"ok": true}</code></li>
+<li><code>GET /api/careers/sources/suggestions</code> → <code>[{kind, token, name, tags: [str], added: bool}]</code> (curated, verified boards)</li>
+<li><code>POST /api/careers/sources/detect</code> <code>{"url"}</code> → <code>{kind, token, name}</code> from a careers link such as
+  <code>https://job-boards.greenhouse.io/stripe/jobs/123</code>, <code>https://jobs.lever.co/palantir/…</code>, <code>https://jobs.ashbyhq.com/ramp/…</code></li>
+</ul>
+<h3 id="search-and-matches">Search and matches<a class="headerlink" href="#search-and-matches" title="Link to this section">#</a></h3>
+<ul>
+<li><code>POST /api/careers/search</code> <code>{"refresh"?: bool}</code> → <code>{"job_id"}</code>. The pipeline: plan → fetch from every enabled
+  source in parallel → normalize and dedupe → score → AI rerank of the best → save. Job steps: <code>plan</code>, <code>fetch</code>,
+  <code>score</code>, <code>rerank</code>, <code>save</code>.</li>
+<li><code>GET /api/careers/matches?min_score=&amp;recommendation=&amp;q=&amp;limit=50</code> → <code>[Match]</code> (best first; dismissed hidden)</li>
+<li><code>GET /api/careers/postings/{id}</code> → <code>Posting</code> plus <code>description_text</code> and <code>questions</code> (when the source exposes them)</li>
+<li><code>POST /api/careers/postings/manual</code> <code>{"title", "company", "description_text", "url"?, "apply_url"?, "location"?}</code> →
+  <code>Match</code> (for a job found anywhere, e.g. LinkedIn: paste it in)</li>
+<li><code>POST /api/careers/postings/{id}/dismiss</code> → <code>{"ok": true}</code></li>
+</ul>
+<pre><code class="language-text">Posting = {id, source: &quot;greenhouse|lever|ashby|smartrecruiters|remotive|arbeitnow|manual&quot;, source_label, company, title,
+           location, remote: bool|null, workplace, department, employment_type, posted_at, url, apply_url, salary,
+           description_snippet, attribution: str|null}       # e.g. &quot;Source: Remotive&quot; with a link back (their terms)
+Match = {posting: Posting, score: 0-100, det_score, llm_score: int|null, recommendation: &quot;apply|maybe|skip&quot;,
+         reasons: [str], gaps: [str], red_flags: [str], application_id: str|null,
+         meta: {components: {title, skills, location, seniority, keywords, recency, feedback?},
+                skills_matched: [str], skills_missing: [str], reviewed_by: &quot;model|rules&quot;, also_in: [location],
+                rubric: {must_haves: [{requirement, status: &quot;met|partial|missing&quot;, evidence, note}],
+                         nice_to_haves: [...]}|null}}
+# score = det_score, or 0.4*det_score + 0.6*llm_score when a model reviewed it. llm_score is computed in code from
+# the rubric (met=1, partial=0.5), and a &quot;met&quot; whose CV quote can't be found in the CV is downgraded to &quot;partial&quot;.
+Question = {key, label, kind: &quot;text|textarea|select|multiselect|file|boolean&quot;, required, options: [str],
+            category: &quot;profile|open_text|legal|demographic|compensation|consent|availability|file|other&quot;}
+</code></pre>
+<h3 id="applications">Applications<a class="headerlink" href="#applications" title="Link to this section">#</a></h3>
+<ul>
+<li><code>POST /api/careers/applications</code> <code>{"posting_id"}</code> → <code>201 {"application": Application, "job_id"}</code> (drafts the
+  materials, then runs the truth check). If an application for that job already exists: <code>200</code> with it.</li>
+<li><code>GET /api/careers/applications?status=</code> → <code>[{id, status, posting: {company, title, location, url}, score,
+  created_at, updated_at, approved_at, submitted_at, follow_up_at}]</code></li>
+<li><code>GET /api/careers/applications/{id}</code> → <code>Application</code></li>
+<li><code>PUT /api/careers/applications/{id}</code> <code>{"materials"?: {summary?, cover_letter?, highlights?}, "answers"?: [{key, value}],
+  "notes"?, "follow_up_at"?}</code> → <code>Application</code> (edited text is re-checked). A select answer must match one of its
+  options; a multi-select takes a list or <code>"a; b"</code> (stored as <code>"a; b"</code>). Consent and voluntary self-identification
+  answers are ignored, because the user gives them in the form.</li>
+<li><code>POST /api/careers/applications/{id}/regenerate</code> → <code>{"job_id"}</code></li>
+<li><code>POST /api/careers/applications/{id}/truth/{issue_id}/ack</code> → <code>Application</code> (the user confirms the claim is true)</li>
+<li><code>POST /api/careers/applications/{id}/approve</code> → <code>Application</code> or <code>409 {"detail", "blockers": [str]}</code></li>
+<li><code>POST /api/careers/applications/{id}/fill</code> → <code>{"job_id"}</code> (installed app only). Opens a visible browser, fills
+  the form, uploads the CV, then <strong>stops before Submit</strong>. <code>400</code> for <code>mode: "assist"</code> sites; <code>409</code> if not approved, if it
+  changed since approval, or if another application is being filled; <code>501</code> with setup steps if Playwright isn't
+  installed. After the user submits, the confirmation page is detected and the status becomes <code>submitted</code>.</li>
+<li><code>POST /api/careers/applications/{id}/submitted</code> <code>{"note"?}</code> → <code>Application</code> (the user confirms they submitted)</li>
+<li><code>POST /api/careers/applications/{id}/status</code> <code>{"status": "interviewing|offer|rejected|withdrawn"}</code> → <code>Application</code></li>
+<li><code>POST /api/careers/applications/{id}/prep</code> → <code>{"target_id", "job_id"}</code> (creates an interview-coach target from
+  the posting and the CV)</li>
+<li><code>DELETE /api/careers/applications/{id}</code> → <code>{"ok": true}</code></li>
+<li><code>GET /api/careers/stats</code> → <code>{approved_today, daily_limit, by_status: {…}, sources_enabled, postings, last_search_at,
+  last_search: {at, run_id, fetched, relevant, saved, reviewed, apply, titles, errors}|null,
+  browser: {available, channel, busy, detail, setup?: [str]}}</code>. <code>postings</code> is the number of matches the last search
+  saved.</li>
+</ul>
+<pre><code class="language-text">Application = {id, status: &quot;preparing|needs_review|approved|filling|filled|submitted|interviewing|offer|rejected|withdrawn|failed&quot;,
+               posting: Posting (+description_text), match: Match|null,
+               materials: {summary, cover_letter, highlights: [str]},
+               answers: [{key, label, kind, required, category, options, value, source: &quot;profile|saved|ai|user|empty&quot;,
+                          needs_input: bool, note}],
+               truth: {ok, issues: [{id, field, text, problem, severity: &quot;block|warn&quot;, acknowledged, source: &quot;rules|ai&quot;}], meta},
+               checklist: [{key, label, ok, blocking: bool, detail}],   # only blocking items stop approval
+               fill_report: {filled: [str], skipped: [str], needs_attention: [str], captcha: bool, email_code: bool,
+                             login_required: bool, submit_button_found: bool, url, at}|null,
+               history: [{at, event, detail}], notes, follow_up_at, target_id, job_id,
+               mode: &quot;fill|assist&quot;,            # fill = Greenhouse/Lever/Ashby/SmartRecruiters form; assist = copy answers
+               warnings: [{kind: &quot;ai_directive|ai_screening|duplicate|info&quot;, text, url?}],
+               questions_origin: &quot;board|standard&quot;,
+               created_at, updated_at, approved_at, submitted_at}
+</code></pre>
+<p>Approval rules: editing materials or answers of an approved application moves it back to <code>needs_review</code>. At most
+<code>careers.daily_application_limit</code> (default 10) applications can be approved per day. Answers the user typed for
+legal, availability, compensation and other questions are saved to <code>saved_answers</code> on approval.</p>
   </main>
 </div>
 <footer class="site-footer">
   <div class="wrap">
     <div>
       <strong style="color:var(--fg)">Interview App</strong><br>
-      Local-first practice coach and meeting notes. FastAPI · SQLite · Ollama · faster-whisper.
+      Local-first practice coach, meeting notes and job search. FastAPI · SQLite · Ollama · faster-whisper · Playwright.
     </div>
     <nav aria-label="Footer">
       <a href="../app/">Live demo</a>
