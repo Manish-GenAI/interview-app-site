@@ -14,7 +14,7 @@
 #>
 param(
     [string]$Path = "",
-    [string]$Branch = "claude/sweet-pascal-pnr2pl",
+    [string]$Branch = "main",
     [string]$Repo = "https://github.com/Manish-GenAI/Interview-App.git",
     [switch]$NoGpu,
     [switch]$NoModels,
