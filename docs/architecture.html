@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Multi-agent architecture · Interview App</title>
+  <meta name="description" content="Interview App is two products sharing one agent platform:">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../css/site.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Interview App home"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2459c4"/><path d="M9 10.5h14a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-7.5L11 24v-3.5H9A1.5 1.5 0 0 1 7.5 19v-7A1.5 1.5 0 0 1 9 10.5z" fill="#fff"/></svg>Interview App</a>
+    <nav class="nav" aria-label="Main">
+      <a href="../index.html#how" class="hide-sm">How it works</a>
+      <a href="../index.html#agents" class="hide-sm">Agents</a>
+      <a href="../index.html#install">Install</a>
+      <a href="../docs/architecture.html" aria-current="page">Docs</a>
+      <a class="btn btn-primary btn-sm" href="../app/">Live demo</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap doc-layout">
+  <aside class="doc-aside" aria-label="Page navigation">
+    <details>
+      <summary>On this page</summary>
+      <div class="toc">
+<ul>
+<li><a href="#1-design-principles">1. Design principles</a></li>
+<li><a href="#2-the-agent-contract">2. The agent contract</a></li>
+<li><a href="#3-agent-catalogue">3. Agent catalogue</a><ul>
+<li><a href="#interview-coach">Interview Coach</a></li>
+<li><a href="#meeting-notes">Meeting Notes</a></li>
+</ul>
+</li>
+<li><a href="#4-pipelines-end-to-end-no-manual-steps">4. Pipelines (end to end, no manual steps)</a><ul>
+<li><a href="#41-prep-pack-prep_target-job">4.1 Prep pack (prep_target job)</a></li>
+<li><a href="#42-practice-turn-one-request-per-answer">4.2 Practice turn (one request per answer)</a></li>
+<li><a href="#43-session-end-finalize_session-job">4.3 Session end (finalize_session job)</a></li>
+<li><a href="#44-live-meeting">4.4 Live meeting</a></li>
+<li><a href="#45-after-the-meeting-finalize_meeting-job-starts-automatically-on-stop">4.5 After the meeting (finalize_meeting job, starts automatically on Stop)</a></li>
+<li><a href="#46-closing-the-loop-debrief-practice">4.6 Closing the loop: debrief → practice</a></li>
+</ul>
+</li>
+<li><a href="#5-error-handling-layer-by-layer">5. Error handling, layer by layer</a></li>
+<li><a href="#6-how-the-system-improves">6. How the system improves</a></li>
+<li><a href="#7-model-routing-and-budgets">7. Model routing and budgets</a></li>
+<li><a href="#8-data-and-privacy">8. Data and privacy</a></li>
+<li><a href="#9-code-map">9. Code map</a></li>
+<li><a href="#10-delivery-ci-website-demo-and-installer">10. Delivery: CI, website, demo and installer</a></li>
+</ul>
+</div>
+
+    </details>
+    <nav class="doc-pages" aria-label="Documentation">
+      <p class="toc-title">Documentation</p>
+      <ul><li><a href="architecture.html" aria-current="page">Architecture</a></li><li><a href="api.html">API</a></li><li><a href="research.html">Research</a></li><li><a href="responsible-use.html">Responsible use</a></li></ul>
+    </nav>
+  </aside>
+  <main id="content" class="prose">
+    <p class="doc-meta"><a href="../index.html">Interview App</a> · Documentation</p>
+    <h1 id="multi-agent-architecture">Multi-agent architecture<a class="headerlink" href="#multi-agent-architecture" title="Link to this section">#</a></h1>
+<p>Interview App is two products sharing one agent platform:</p>
+<ul>
+<li><strong>Interview Coach</strong>: turns your resume and a job description into a prep pack, runs spoken mock interviews,
+  scores every answer, and adapts what you practise next.</li>
+<li><strong>Meeting Notes</strong>: a transparent, consent-gated note-taker in the spirit of Granola. It captures the
+  transcript live, lets you search it and catch up mid-meeting, and writes enhanced notes when you stop.</li>
+</ul>
+<p>Everything runs on your PC: FastAPI + SQLite, Ollama on your GPU, local Whisper. Claude is an optional backend.
+This document defines every agent: what it receives, what it decides, what it passes on, how the system recovers
+from errors without you touching it, and how it improves over time.</p>
+<hr />
+<h2 id="1-design-principles">1. Design principles<a class="headerlink" href="#1-design-principles" title="Link to this section">#</a></h2>
+<ol>
+<li><strong>Orchestrated pipelines, not a chat room of agents.</strong> Each pipeline is a fixed graph of specialist agents run by
+   code (<code>coach/service.py</code>, <code>notes/service.py</code>). Agents never call each other directly. The orchestrator passes
+   typed outputs from one agent to the next. Behaviour stays predictable and testable, and each step can be
+   retried, traced and replaced. That matters most with local 8–14B models.</li>
+<li><strong>Typed contracts.</strong> Every agent's output is a Pydantic model. The JSON schema is sent to the model (Ollama
+   <code>format</code> / Claude <code>output_config.format</code>), then the output is validated before anything downstream sees it.</li>
+<li><strong>Always finish.</strong> Every agent has a deterministic rule-based fallback, so a pipeline completes even with no model
+   available. Fallback results are labelled <code>degraded</code> in the UI.</li>
+<li><strong>Deterministic guards around probabilistic models.</strong> Code measures speaking pace, filler words and STAR markers,
+   and applies calibration caps, quote verification, user-note preservation and schedule maths. Models do judgment;
+   code does arithmetic and enforcement.</li>
+<li><strong>Human in control, never deceived parties.</strong> Practice help exists only in practice sessions. Meetings require
+   consent, show a recording indicator, and never generate answers for you to say live
+   (see <a href="responsible-use.html">RESPONSIBLE_USE.md</a>).</li>
+</ol>
+<figure class="diagram"><a href="../diagrams/fe616175ca.svg" title="Open the diagram at full size"><img src="../diagrams/fe616175ca.svg" width="1887" height="357" alt="Diagram: 1. Design principles" loading="lazy"></a><figcaption>Diagram · <a href="../diagrams/fe616175ca.svg">open full size</a></figcaption></figure>
+<hr />
+<h2 id="2-the-agent-contract">2. The agent contract<a class="headerlink" href="#2-the-agent-contract" title="Link to this section">#</a></h2>
+<p>Every agent subclasses <code>Agent</code> (<code>backend/app/agents/base.py</code>) and defines:</p>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Member</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>system_prompt()</code> / <code>user_prompt()</code></td>
+<td>The instructions and the input data</td>
+</tr>
+<tr>
+<td><code>output_model</code></td>
+<td>Pydantic model → strict JSON schema sent to the model</td>
+</tr>
+<tr>
+<td><code>check()</code></td>
+<td>Semantic checks beyond the schema (e.g. "quotes must come from the answer")</td>
+</tr>
+<tr>
+<td><code>salvage()</code></td>
+<td>On the last attempt, may output that failed <code>check()</code> still be used and fixed in code?</td>
+</tr>
+<tr>
+<td><code>postprocess()</code></td>
+<td>Deterministic clean-up and calibration, applied to LLM <strong>and</strong> fallback output</td>
+</tr>
+<tr>
+<td><code>heuristic()</code></td>
+<td>The rule-based fallback that guarantees an answer</td>
+</tr>
+<tr>
+<td><code>tier</code></td>
+<td><code>smart</code> (quality) or <code>fast</code> (latency-sensitive)</td>
+</tr>
+</tbody>
+</table>
+<p><code>Agent.run()</code> executes this loop:</p>
+<figure class="diagram"><a href="../diagrams/312a5aa1b6.svg" title="Open the diagram at full size"><img src="../diagrams/312a5aa1b6.svg" width="1371" height="1246" alt="Diagram: 2. The agent contract" loading="lazy"></a><figcaption>Diagram · <a href="../diagrams/312a5aa1b6.svg">open full size</a></figcaption></figure>
+<p>Every run writes a <strong>trace</strong> recording the agent, prompt version, provider, model, status, attempts, latency,
+tokens, cost and errors. The System page shows the traces, and they feed the router.</p>
+<hr />
+<h2 id="3-agent-catalogue">3. Agent catalogue<a class="headerlink" href="#3-agent-catalogue" title="Link to this section">#</a></h2>
+<h3 id="interview-coach">Interview Coach<a class="headerlink" href="#interview-coach" title="Link to this section">#</a></h3>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Agent</th>
+<th>Receives</th>
+<th>Decides</th>
+<th>Passes to</th>
+<th>Fallback</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ProfileAgent</strong></td>
+<td>Resume text</td>
+<td>Skills, roles, achievements and numbers the resume actually supports (no invention)</td>
+<td>FitAgent, StoryMinerAgent, QuestionPlannerAgent</td>
+<td>Parses year ranges, bullets, a skills vocabulary and education lines</td>
+</tr>
+<tr>
+<td><strong>JobAnalystAgent</strong></td>
+<td>Job description</td>
+<td>Must-have vs nice-to-have skills, seniority, responsibilities, 4–8 weighted competencies</td>
+<td>FitAgent, StoryMiner, QuestionPlanner, Evaluator (role context), question selection (weights)</td>
+<td>Section detection + competency cue dictionary</td>
+</tr>
+<tr>
+<td><strong>FitAgent</strong></td>
+<td>Profile + job analysis</td>
+<td>Match score, evidenced strengths, honest gaps with mitigations, talking points</td>
+<td>QuestionPlannerAgent (gaps become questions), Prep overview</td>
+<td>Skill overlap with evidence lines</td>
+</tr>
+<tr>
+<td><strong>StoryMinerAgent</strong></td>
+<td>Profile + job analysis</td>
+<td>4–8 STAR stories from <em>your real</em> experience, with <code>[add: …]</code> prompts where facts are missing</td>
+<td>Story bank (editable) → practice prep panel</td>
+<td>One story per quantified bullet</td>
+</tr>
+<tr>
+<td><strong>QuestionPlannerAgent</strong></td>
+<td>Profile + job + fit + existing questions</td>
+<td>~20 realistic questions: category, competency, difficulty, why asked, what strong answers include</td>
+<td>Question bank → selection policy → InterviewerAgent</td>
+<td>Template bank per competency/category</td>
+</tr>
+<tr>
+<td><strong>HintAgent</strong> <em>(fast)</em></td>
+<td>Practice question + your partial transcript</td>
+<td>0–2 nudges about structure or clarity. Never writes content</td>
+<td>Live hints panel (merged with rule hints)</td>
+<td>None (rule hints only)</td>
+</tr>
+<tr>
+<td><strong>EvaluatorAgent</strong></td>
+<td>Question, competency, answer transcript, measured delivery metrics, role context</td>
+<td>Six rubric scores (1–5), overall, verbatim evidence quotes, improvements, a restructuring outline</td>
+<td>Critic/calibration → skill memory → session report</td>
+<td>Rule scorer (STAR markers, numbers, I/we, fillers, pace)</td>
+</tr>
+<tr>
+<td><strong>InterviewerAgent</strong></td>
+<td>Question, answer, metrics, persona, follow-ups used</td>
+<td>Probe with one follow-up (missing result, ownership, numbers, trade-offs) or move on</td>
+<td>Session controller → next turn</td>
+<td>Rules keyed on missing STAR parts / numbers / "we"</td>
+</tr>
+<tr>
+<td><strong>CoachAgent</strong></td>
+<td>All turns + evaluations + competency deltas</td>
+<td>Headline, cross-answer patterns, 2–4 drills, next focus</td>
+<td>Report page; next session's focus</td>
+<td>Aggregates scores, picks drills for the weakest dimensions</td>
+</tr>
+</tbody>
+</table>
+<p>Code steps between the agents (not LLMs):</p>
+<ul>
+<li><strong>Metrics</strong>: word count, words per minute, fillers per 100 words, hedges, I vs we, numbers, STAR presence,
+  job-description terms used, repeated words.</li>
+<li><strong>Critic/calibration</strong>: caps scores for very short answers (no result → impact ≤ 3; heavy fillers → communication
+  ≤ 3), blends the overall with a weighted rubric mean, drops unverifiable quotes, applies the bounded feedback
+  bias, and derives a debrief-style <code>hire_signal</code>.</li>
+<li><strong>Skill memory</strong>: an exponential moving average per competency plus SM-2-style spacing. Strong answers push the
+  next review further out; weak ones bring it back within half a day.</li>
+<li><strong>Selection policy</strong>: priority is weakness, due date, job weight and novelty, minus recency, with diversity caps
+  and a warm-up first.</li>
+</ul>
+<h3 id="meeting-notes">Meeting Notes<a class="headerlink" href="#meeting-notes" title="Link to this section">#</a></h3>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Agent</th>
+<th>Receives</th>
+<th>Decides</th>
+<th>Passes to</th>
+<th>Fallback</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>RecapAgent</strong> <em>(fast, live)</em></td>
+<td>Transcript of the last N minutes</td>
+<td>3–6 points actually said, decisions, open questions. Never suggests replies</td>
+<td>Live "Catch me up" panel</td>
+<td>Extractive summary + regex decisions/questions</td>
+</tr>
+<tr>
+<td><strong>ChunkNotesAgent</strong></td>
+<td>One ~9k-character slice of a long transcript, with segment ids</td>
+<td>Key points (with refs), decisions, actions, open questions for that slice</td>
+<td>NoteEnhancerAgent (map → reduce)</td>
+<td>Extractive + regex</td>
+</tr>
+<tr>
+<td><strong>NoteEnhancerAgent</strong></td>
+<td>Your typed notes + transcript (or chunk notes) + template</td>
+<td>Final notes: your bullets kept as <code>you</code>, transcript details added as <code>ai</code> with segment refs, decisions, owners/dates only when stated</td>
+<td>Notes page, markdown export, search index, recipes, debrief → practice</td>
+<td>Your notes + extractive bullets + regex actions</td>
+</tr>
+<tr>
+<td><strong>MeetingQAAgent</strong></td>
+<td>Question + top transcript excerpts (keyword + semantic retrieval)</td>
+<td>Answer only from excerpts, cite segment ids, or say "not found"</td>
+<td>Ask panel (citations jump to transcript)</td>
+<td>Returns the most relevant moments</td>
+</tr>
+<tr>
+<td><strong>RecipeAgent</strong></td>
+<td>Saved notes + recipe (follow-up email, team summary, to-do list)</td>
+<td>Wording of the draft, facts only from notes</td>
+<td>Drafts panel (copy)</td>
+<td>Template fill from notes</td>
+</tr>
+</tbody>
+</table>
+<p>Code steps: consent gate, segment storage and instant FTS5 indexing, live keyword search, the redact-last-N-minutes
+control, user-note preservation (if the model drops your notes, code puts them back), segment-ref validation,
+embeddings via Ollama, retention cleanup.</p>
+<hr />
+<h2 id="4-pipelines-end-to-end-no-manual-steps">4. Pipelines (end to end, no manual steps)<a class="headerlink" href="#4-pipelines-end-to-end-no-manual-steps" title="Link to this section">#</a></h2>
+<h3 id="41-prep-pack-prep_target-job">4.1 Prep pack (<code>prep_target</code> job)<a class="headerlink" href="#41-prep-pack-prep_target-job" title="Link to this section">#</a></h3>
+<figure class="diagram"><a href="../diagrams/1fa826f02b.svg" title="Open the diagram at full size"><img src="../diagrams/1fa826f02b.svg" width="1027" height="183" alt="Diagram: 4.1 Prep pack (`prep_target` job)" loading="lazy"></a><figcaption>Diagram · <a href="../diagrams/1fa826f02b.svg">open full size</a></figcaption></figure>
+<p>Profile and job analysis run in parallel, as do stories and questions. Re-running prep keeps questions
+you added or have already practised, and stories you edited.</p>
+<h3 id="42-practice-turn-one-request-per-answer">4.2 Practice turn (one request per answer)<a class="headerlink" href="#42-practice-turn-one-request-per-answer" title="Link to this section">#</a></h3>
+<ol>
+<li><strong>Live (while you speak):</strong> the browser streams 16 kHz audio → Whisper partial and final text → every ~4 s the
+   UI asks for hints: rule hints (time, STAR progress, pace, fillers, "I vs we") plus HintAgent at most every 15 s.</li>
+<li><strong>On "Done":</strong> metrics are computed → <strong>EvaluatorAgent ∥ InterviewerAgent</strong> run in parallel under a 150 s budget →
+   the critic calibrates → the turn is saved → skill memory is updated → the next turn is either the follow-up or the
+   next planned question.</li>
+<li><strong>Optional self-rating</strong> before the score is revealed. The gap ("you rated 4, coach 3.2") trains self-assessment.</li>
+</ol>
+<h3 id="43-session-end-finalize_session-job">4.3 Session end (<code>finalize_session</code> job)<a class="headerlink" href="#43-session-end-finalize_session-job" title="Link to this section">#</a></h3>
+<p>Skill deltas are computed against the snapshot taken at session start → <strong>CoachAgent</strong> → report saved. The weakest
+competencies become next session's priority through the selection policy.</p>
+<h3 id="44-live-meeting">4.4 Live meeting<a class="headerlink" href="#44-live-meeting" title="Link to this section">#</a></h3>
+<p>Consent → <code>live</code> → audio from your mic (<code>Me</code>) and the shared tab or screen (<code>Them</code>) streams over two WebSockets →
+final segments are stored and indexed instantly → <strong>Search what was said</strong> (FTS5, no model) and
+<strong>Catch me up</strong> (RecapAgent) work live → the privacy control deletes the last N minutes.</p>
+<h3 id="45-after-the-meeting-finalize_meeting-job-starts-automatically-on-stop">4.5 After the meeting (<code>finalize_meeting</code> job, starts automatically on Stop)<a class="headerlink" href="#45-after-the-meeting-finalize_meeting-job-starts-automatically-on-stop" title="Link to this section">#</a></h3>
+<p><code>[ChunkNotesAgent × N if long]</code> → <strong>NoteEnhancerAgent</strong> → markdown → FTS index → embeddings (optional) → <code>ready</code>.
+Then Ask (MeetingQAAgent with hybrid retrieval and citations), Drafts (RecipeAgent), Export.</p>
+<h3 id="46-closing-the-loop-debrief-practice">4.6 Closing the loop: debrief → practice<a class="headerlink" href="#46-closing-the-loop-debrief-practice" title="Link to this section">#</a></h3>
+<p>After a real interview, record or type your own debrief using the <em>Interview debrief</em> template. NoteEnhancerAgent
+extracts <code>questions_asked</code>, and one click adds them to that job's practice bank (<code>source: debrief</code>). The selection
+policy treats them as new, so they come up in the next session.</p>
+<hr />
+<h2 id="5-error-handling-layer-by-layer">5. Error handling, layer by layer<a class="headerlink" href="#5-error-handling-layer-by-layer" title="Link to this section">#</a></h2>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Layer</th>
+<th>Failure</th>
+<th>Response</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Model output</td>
+<td>Not JSON, wrong shape, out-of-range values</td>
+<td>Strip reasoning tags and fences, extract JSON, validate. Clamp numeric scores instead of rejecting. Send a repair prompt with the exact error</td>
+</tr>
+<tr>
+<td>Model output</td>
+<td>Semantically wrong (invented quotes, user notes dropped, too few questions, inconsistent overall)</td>
+<td><code>check()</code> → repair → on the last attempt <code>salvage()</code> keeps good output and <code>postprocess()</code> fixes it</td>
+</tr>
+<tr>
+<td>Provider</td>
+<td>Connection refused / model not pulled / bad key</td>
+<td><code>ProviderUnavailable</code> → skip to the next provider. Circuit opens for 30 s so later agents don't wait</td>
+</tr>
+<tr>
+<td>Provider</td>
+<td>Timeouts, 429, 5xx</td>
+<td>Retry with backoff. Three consecutive failures open the circuit (30 s doubling to 10 min)</td>
+</tr>
+<tr>
+<td>Provider</td>
+<td>Claude refusal</td>
+<td>Server-side <code>fallbacks: "default"</code> first. If it still refuses, try the next provider or the rules</td>
+</tr>
+<tr>
+<td>Provider</td>
+<td>Claude spend reaches the monthly budget</td>
+<td>Provider reports unavailable → Ollama or rules take over automatically</td>
+</tr>
+<tr>
+<td>Provider</td>
+<td>Schema feature unsupported</td>
+<td>Retry the same provider without native schema mode (prompt-only JSON)</td>
+</tr>
+<tr>
+<td>Request</td>
+<td>Slow model on a synchronous call</td>
+<td>Per-request deadline (<code>AgentContext.with_budget</code>). On expiry, go straight to the rule fallback so the UI never hangs</td>
+</tr>
+<tr>
+<td>Job</td>
+<td>Exception in a pipeline</td>
+<td>Retried once with backoff. On final failure a hook marks the target, session or meeting <code>failed</code> and the UI offers a re-run</td>
+</tr>
+<tr>
+<td>Process</td>
+<td>App closed or crashed mid-job</td>
+<td>Jobs and their step progress are persisted. On startup every <code>queued</code>/<code>running</code> job is re-submitted (handlers are idempotent)</td>
+</tr>
+<tr>
+<td>Speech-to-text</td>
+<td>Whisper not installed or model can't load</td>
+<td>WebSocket replies <code>unavailable</code> → the browser falls back to Web Speech (mic only) and posts segments over REST. Load retried after 60 s</td>
+</tr>
+<tr>
+<td>Speech-to-text</td>
+<td>GPU libraries missing</td>
+<td>Whisper retries on CPU with a small English model</td>
+</tr>
+<tr>
+<td>Speech-to-text</td>
+<td>Hallucinated text on silence</td>
+<td>Energy VAD + Silero VAD on finals + blocklist for very short utterances</td>
+</tr>
+<tr>
+<td>Data</td>
+<td>Concurrent submissions</td>
+<td>Per-session async lock; a turn can only be answered once (409 otherwise)</td>
+</tr>
+<tr>
+<td>Security</td>
+<td>Other websites calling the local API</td>
+<td>Host-header allow-list (blocks DNS rebinding); same-origin check on the audio WebSocket; server binds to 127.0.0.1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-how-the-system-improves">6. How the system improves<a class="headerlink" href="#6-how-the-system-improves" title="Link to this section">#</a></h2>
+<ol>
+<li><strong>It learns you (per-user adaptation).</strong> Each answer updates that competency's moving-average score and
+   review schedule. The next session automatically prioritises weak and due competencies weighted by what the
+   job cares about. Questions from real interviews flow in through debriefs.</li>
+<li><strong>It learns from your feedback (in-context, bounded).</strong> 👍/👎 with a reason (<code>too_harsh</code>, <code>too_lenient</code>,
+   <code>generic</code>, <code>wrong</code>) on evaluations, hints, reports, notes and answers become a short guidance note in the
+   relevant agent's prompt. Net "too harsh"/"too lenient" votes also apply a bounded ±0.25 score calibration,
+   disclosed in <code>calibration_notes</code>. No model weights change. Everything is visible on the System page.</li>
+<li><strong>It learns which backend works for each agent (adaptive routing).</strong> Traces record whether each provider
+   produced usable output. If a provider fails more than half its last 6+ calls for one agent, that agent tries the
+   other provider first. Recent traces seed this at startup.</li>
+<li><strong>It is measured before it changes (evals).</strong> <code>backend/app/evals/golden.json</code> holds hand-labelled answers with
+   expected score bands. Run it from the System page or with <code>python -m app.evals</code> before switching models or
+   editing prompts. Prompts are versioned (<code>prompt_version</code>) and traces record the version. Feedback exports
+   (<code>/api/feedback/export</code>, JSONL) turn disliked outputs into new eval cases.</li>
+<li><strong>Observability.</strong> Per-agent call counts, success and degraded rates, latency, token use and Claude spend are
+   all on the System page.</li>
+</ol>
+<hr />
+<h2 id="7-model-routing-and-budgets">7. Model routing and budgets<a class="headerlink" href="#7-model-routing-and-budgets" title="Link to this section">#</a></h2>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Tier</th>
+<th>Used by</th>
+<th>Ollama default</th>
+<th>Claude default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>smart</td>
+<td>Profile, Job, Fit, Stories, Questions, Evaluator, Interviewer, Coach, Notes, QA, Recipes</td>
+<td><code>qwen3:14b</code></td>
+<td><code>claude-opus-5-5</code>, effort <code>medium</code></td>
+</tr>
+<tr>
+<td>fast</td>
+<td>HintAgent, RecapAgent</td>
+<td>same model (no extra VRAM)</td>
+<td><code>claude-opus-5-5</code>, effort <code>low</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>On a 16 GB RTX 4080, <code>qwen3:14b</code> (~9 GB weights + KV cache at 16K context) and Whisper <code>large-v3-turbo</code>
+  (~2.5 GB) fit together. The context window is set explicitly, because Ollama's default is too small for transcripts.</li>
+<li>Claude calls use structured outputs, adaptive thinking with an explicit effort, prompt caching on system prompts,
+  and server-side refusal fallbacks. Spend is estimated from token usage and capped by a monthly budget (default $50).</li>
+<li>Provider order is configurable (<code>ollama,claude</code> or <code>claude,ollama</code>). Either can be absent.</li>
+</ul>
+<hr />
+<h2 id="8-data-and-privacy">8. Data and privacy<a class="headerlink" href="#8-data-and-privacy" title="Link to this section">#</a></h2>
+<ul>
+<li>One SQLite file in <code>data/</code> (FTS5 for search), plus <code>settings.json</code>, <code>secrets.json</code> (API key) and downloaded models.</li>
+<li><strong>Audio is never stored.</strong> Only text segments are kept. You can delete the last N minutes, delete meetings, or set
+  <code>retention_days</code> to purge old meetings automatically.</li>
+<li>Nothing leaves your PC unless you configure Claude, in which case only the text of the specific request is sent.
+  The browser speech-recognition fallback sends audio to the browser vendor; local Whisper avoids that.</li>
+</ul>
+<hr />
+<h2 id="9-code-map">9. Code map<a class="headerlink" href="#9-code-map" title="Link to this section">#</a></h2>
+<pre><code>backend/app/
+  agents/base.py        Agent contract: validation, repair, salvage, fallback, tracing
+  llm/                  Ollama + Claude providers, router (breaker, adaptive routing), JSON utilities
+  coach/                schemas, agents, metrics, memory (skills + selection), service (pipelines)
+  notes/                schemas, agents, templates/recipes, search (FTS5 + embeddings), service
+  stt/                  faster-whisper engine, streaming transcriber (VAD, partials, finals)
+  routes/               REST + WebSocket endpoints (see docs/API.md)
+  jobs.py               persisted background jobs with retries and crash recovery
+  feedback.py           feedback → guidance + bounded calibration
+  evals/                golden set + runner (CLI and API)
+web/                    browser UI (no build step)
+</code></pre>
+<hr />
+<h2 id="10-delivery-ci-website-demo-and-installer">10. Delivery: CI, website, demo and installer<a class="headerlink" href="#10-delivery-ci-website-demo-and-installer" title="Link to this section">#</a></h2>
+<table class="doc-table">
+<thead>
+<tr>
+<th>Piece</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.github/workflows/ci.yml</code></td>
+<td>Runs pyflakes and the test suite on Python 3.11–3.13 (Linux). On <strong>Windows PowerShell 5.1</strong> it runs the real one-command installer into a folder whose name has a space, starts the app, checks that <code>http://127.0.0.1:8765</code> answers, then runs the tests on Windows.</td>
+</tr>
+<tr>
+<td><code>.github/workflows/pages.yml</code></td>
+<td>Builds the website with <code>scripts/build_site.py</code> (landing page, these docs rendered, the in-browser demo, <code>install.ps1</code>). It publishes only the built files to the <code>gh-pages</code> branch of the separate <strong>public</strong> repository <code>Manish-GenAI/interview-app-site</code>, served at https://manish-genai.github.io/interview-app-site/. The source repository stays private.</td>
+</tr>
+<tr>
+<td>Demo mode (<code>web/js/demo/</code>)</td>
+<td>The same UI with a JavaScript port of the built-in rules answering every <code>/api</code> call inside the browser. Data lives in that browser's storage. No models, no server, no meeting-audio capture. It's for trying the workflow, not for real practice quality.</td>
+</tr>
+<tr>
+<td><code>scripts/install.ps1</code></td>
+<td>One command for Windows: checks for Git and Python (installs them with winget if missing), clones into <code>D:\Interview APP</code>, runs <code>setup.ps1</code>, adds a desktop shortcut and starts the app.</td>
+</tr>
+<tr>
+<td>Local-only guard (<code>app/security.py</code>)</td>
+<td>Answers only requests addressed to <code>127.0.0.1</code>/<code>localhost</code>. Rejected addresses are logged with the fix (<code>IA_ALLOWED_HOSTS</code>).</td>
+</tr>
+</tbody>
+</table>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <strong style="color:var(--fg)">Interview App</strong><br>
+      Local-first practice coach and meeting notes. FastAPI · SQLite · Ollama · faster-whisper.
+    </div>
+    <nav aria-label="Footer">
+      <a href="../app/">Live demo</a>
+      <a href="../index.html#install">Install</a>
+      <a href="../docs/architecture.html">Architecture</a>
+      <a href="../docs/api.html">API</a>
+      <a href="../docs/research.html">Research</a>
+      <a href="../docs/responsible-use.html">Responsible use</a>
+      <a href="https://github.com/Manish-GenAI/Interview-App/tree/claude/sweet-pascal-pnr2pl">Source (private repository)</a>
+    </nav>
+  </div>
+</footer>
+<script src="../js/site.js" defer></script>
+</body>
+</html>

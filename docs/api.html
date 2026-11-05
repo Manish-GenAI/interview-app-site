@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API contract · Interview App</title>
+  <meta name="description" content="Base URL: http://127.0.0.1:8765 (local only). JSON in and out. Errors use FastAPI&#x27;s shape: {&quot;detail&quot;: &quot;message&quot;} with a 4xx/5xx status. Timestamps are ISO-">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../css/site.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Interview App home"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2459c4"/><path d="M9 10.5h14a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-7.5L11 24v-3.5H9A1.5 1.5 0 0 1 7.5 19v-7A1.5 1.5 0 0 1 9 10.5z" fill="#fff"/></svg>Interview App</a>
+    <nav class="nav" aria-label="Main">
+      <a href="../index.html#how" class="hide-sm">How it works</a>
+      <a href="../index.html#agents" class="hide-sm">Agents</a>
+      <a href="../index.html#install">Install</a>
+      <a href="../docs/architecture.html" aria-current="page">Docs</a>
+      <a class="btn btn-primary btn-sm" href="../app/">Live demo</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap doc-layout">
+  <aside class="doc-aside" aria-label="Page navigation">
+    <details>
+      <summary>On this page</summary>
+      <div class="toc">
+<ul>
+<li><a href="#system">System</a><ul>
+<li><a href="#get-apihealth-force1-also-verifies-the-claude-key">GET /api/health (?force=1 also verifies the Claude key)</a></li>
+<li><a href="#get-apisettings-put-apisettings">GET /api/settings / PUT /api/settings</a></li>
+<li><a href="#get-apijobsid">GET /api/jobs/{id}</a></li>
+<li><a href="#get-apiagents">GET /api/agents</a></li>
+<li><a href="#get-apitraceslimit100agentstatus">GET /api/traces?limit=100&amp;agent=&amp;status=</a></li>
+<li><a href="#feedback-feeds-the-improvement-loop">Feedback (feeds the improvement loop)</a></li>
+<li><a href="#evals">Evals</a></li>
+<li><a href="#get-apitemplates">GET /api/templates</a></li>
+<li><a href="#post-apiextract-text-multipart-field-file-pdf-docx-txt-md">POST /api/extract-text (multipart, field file: .pdf .docx .txt .md)</a></li>
+</ul>
+</li>
+<li><a href="#interview-coach">Interview coach</a><ul>
+<li><a href="#targets-a-job-youre-preparing-for">Targets (a job you're preparing for)</a></li>
+<li><a href="#question-bank-and-story-bank">Question bank and story bank</a></li>
+<li><a href="#practice-sessions">Practice sessions</a></li>
+<li><a href="#progress">Progress</a></li>
+</ul>
+</li>
+<li><a href="#meeting-notes">Meeting notes</a></li>
+<li><a href="#speech-to-text">Speech-to-text</a><ul>
+<li><a href="#ws-apisttwsmodepracticemeetingmeeting_idchannelmethemoffsetseconds">WS /api/stt/ws?mode=practice|meeting&amp;meeting_id=&amp;channel=me|them&amp;offset=&lt;seconds&gt;</a></li>
+<li><a href="#post-apistttranscribe-multipart-file-webmwavoggmp3">POST /api/stt/transcribe (multipart file: webm/wav/ogg/mp3)</a></li>
+</ul>
+</li>
+</ul>
+</div>
+
+    </details>
+    <nav class="doc-pages" aria-label="Documentation">
+      <p class="toc-title">Documentation</p>
+      <ul><li><a href="architecture.html">Architecture</a></li><li><a href="api.html" aria-current="page">API</a></li><li><a href="research.html">Research</a></li><li><a href="responsible-use.html">Responsible use</a></li></ul>
+    </nav>
+  </aside>
+  <main id="content" class="prose">
+    <p class="doc-meta"><a href="../index.html">Interview App</a> · Documentation</p>
+    <h1 id="api-contract">API contract<a class="headerlink" href="#api-contract" title="Link to this section">#</a></h1>
+<p>Base URL: <code>http://127.0.0.1:8765</code> (local only). JSON in and out. Errors use FastAPI's shape:
+<code>{"detail": "message"}</code> with a 4xx/5xx status. Timestamps are ISO-8601 UTC strings.</p>
+<p>Every agent-produced object carries a <code>meta</code> block describing how it was made:</p>
+<pre><code class="language-json">{&quot;trace_id&quot;: &quot;trc_…&quot;, &quot;provider&quot;: &quot;ollama | claude | heuristic&quot;, &quot;model&quot;: &quot;qwen3:14b&quot;,
+ &quot;status&quot;: &quot;ok | repaired | fallback | degraded&quot;, &quot;attempts&quot;: 1, &quot;latency_ms&quot;: 2140}
+</code></pre>
+<p><code>degraded</code> means no language model was available and built-in rules produced the result.</p>
+<hr />
+<h2 id="system">System<a class="headerlink" href="#system" title="Link to this section">#</a></h2>
+<h3 id="get-apihealth-force1-also-verifies-the-claude-key"><code>GET /api/health</code> (<code>?force=1</code> also verifies the Claude key)<a class="headerlink" href="#get-apihealth-force1-also-verifies-the-claude-key" title="Link to this section">#</a></h3>
+<pre><code class="language-json">{
+  &quot;version&quot;: &quot;0.1.0&quot;,
+  &quot;llm_ready&quot;: true,
+  &quot;providers&quot;: [
+    {&quot;name&quot;: &quot;ollama&quot;, &quot;available&quot;: true, &quot;reachable&quot;: true, &quot;detail&quot;: &quot;…&quot;,
+     &quot;models&quot;: {&quot;smart&quot;: &quot;qwen3:14b&quot;, &quot;fast&quot;: &quot;&quot;, &quot;embed&quot;: &quot;nomic-embed-text&quot;},
+     &quot;missing&quot;: [], &quot;installed&quot;: [&quot;qwen3:14b&quot;], &quot;version&quot;: &quot;0.12.0&quot;,
+     &quot;circuit&quot;: {&quot;state&quot;: &quot;closed&quot;, &quot;failures&quot;: 0, &quot;retry_in_sec&quot;: 0, &quot;last_error&quot;: &quot;&quot;, &quot;calls&quot;: 3}},
+    {&quot;name&quot;: &quot;claude&quot;, &quot;available&quot;: false, &quot;detail&quot;: &quot;No API key…&quot;,
+     &quot;models&quot;: {&quot;smart&quot;: &quot;claude-opus-5-5&quot;, &quot;fast&quot;: &quot;claude-opus-5-5&quot;},
+     &quot;month_spend_usd&quot;: 0.0, &quot;monthly_budget_usd&quot;: 50.0, &quot;circuit&quot;: {}}
+  ],
+  &quot;stt&quot;: {&quot;engine&quot;: &quot;faster-whisper | browser | off&quot;, &quot;available&quot;: true, &quot;detail&quot;: &quot;…&quot;,
+          &quot;model&quot;: &quot;large-v3-turbo&quot;, &quot;device&quot;: &quot;cuda&quot;, &quot;loaded&quot;: false},
+  &quot;data_dir&quot;: &quot;…/data&quot;,
+  &quot;fts&quot;: true
+}
+</code></pre>
+<h3 id="get-apisettings-put-apisettings"><code>GET /api/settings</code> / <code>PUT /api/settings</code><a class="headerlink" href="#get-apisettings-put-apisettings" title="Link to this section">#</a></h3>
+<p><code>GET</code> returns the settings object below. <code>PUT</code> takes any partial subset and returns the updated object.
+To set or clear the Claude key: <code>PUT {"claude": {"api_key": "sk-ant-…"}}</code> / <code>{"claude": {"api_key": ""}}</code>.
+The key is never returned; <code>api_key_set</code> / <code>api_key_source</code> say whether one exists.</p>
+<pre><code class="language-json">{
+  &quot;provider_order&quot;: [&quot;ollama&quot;, &quot;claude&quot;],
+  &quot;adaptive_routing&quot;: true,
+  &quot;ollama&quot;: {&quot;base_url&quot;: &quot;http://127.0.0.1:11434&quot;, &quot;smart_model&quot;: &quot;qwen3:14b&quot;, &quot;fast_model&quot;: &quot;&quot;,
+             &quot;embed_model&quot;: &quot;nomic-embed-text&quot;, &quot;num_ctx&quot;: 16384, &quot;keep_alive&quot;: &quot;30m&quot;, &quot;timeout_sec&quot;: 240,
+             &quot;think&quot;: &quot;off&quot;, &quot;max_parallel&quot;: 2},
+  &quot;claude&quot;: {&quot;smart_model&quot;: &quot;claude-opus-5-5&quot;, &quot;fast_model&quot;: &quot;claude-opus-5-5&quot;, &quot;smart_effort&quot;: &quot;medium&quot;,
+             &quot;fast_effort&quot;: &quot;low&quot;, &quot;monthly_budget_usd&quot;: 50, &quot;timeout_sec&quot;: 180, &quot;use_fallbacks&quot;: true,
+             &quot;prices&quot;: {&quot;claude-opus-5-5&quot;: [4.0, 20.0]}, &quot;api_key_set&quot;: false, &quot;api_key_source&quot;: null},
+  &quot;stt&quot;: {&quot;engine&quot;: &quot;auto&quot;, &quot;whisper_model&quot;: &quot;large-v3-turbo&quot;, &quot;device&quot;: &quot;auto&quot;, &quot;compute_type&quot;: &quot;auto&quot;,
+          &quot;language&quot;: &quot;en&quot;, &quot;partials&quot;: true},
+  &quot;coach&quot;: {&quot;persona&quot;: &quot;neutral&quot;, &quot;answer_time_limit_sec&quot;: 150, &quot;hints_enabled&quot;: true, &quot;llm_hints&quot;: true,
+            &quot;max_followups&quot;: 1, &quot;speak_questions&quot;: true},
+  &quot;notes&quot;: {&quot;default_template&quot;: &quot;general&quot;, &quot;retention_days&quot;: 0}
+}
+</code></pre>
+<h3 id="get-apijobsid"><code>GET /api/jobs/{id}</code><a class="headerlink" href="#get-apijobsid" title="Link to this section">#</a></h3>
+<pre><code class="language-json">{&quot;id&quot;: &quot;job_…&quot;, &quot;kind&quot;: &quot;prep_target&quot;, &quot;status&quot;: &quot;queued | running | done | failed&quot;,
+ &quot;steps&quot;: [{&quot;key&quot;: &quot;profile&quot;, &quot;label&quot;: &quot;Reading your resume&quot;, &quot;agent&quot;: &quot;ProfileAgent&quot;,
+            &quot;status&quot;: &quot;pending | running | done | degraded | failed | skipped&quot;,
+            &quot;provider&quot;: &quot;ollama&quot;, &quot;model&quot;: &quot;qwen3:14b&quot;, &quot;latency_ms&quot;: 5100, &quot;detail&quot;: &quot;&quot;}],
+ &quot;result&quot;: {}, &quot;error&quot;: null, &quot;attempts&quot;: 1, &quot;created_at&quot;: &quot;…&quot;, &quot;updated_at&quot;: &quot;…&quot;}
+</code></pre>
+<p>Poll every ~700 ms until <code>status</code> is <code>done</code> or <code>failed</code>.</p>
+<h3 id="get-apiagents"><code>GET /api/agents</code><a class="headerlink" href="#get-apiagents" title="Link to this section">#</a></h3>
+<p>Agent registry with live stats: <code>{"agents": [{"name", "module": "coach | notes", "role", "tier", "prompt_version",
+"receives", "decides", "passes_to", "calls", "ok_rate", "degraded_rate", "avg_latency_ms"}], "routing": {"breakers": {…},
+"quality": [{"agent", "provider", "calls", "failure_rate", "avg_latency_ms", "demoted"}]}, "spend": {"month": "2026-11",
+"claude_usd": 0.0, "budget_usd": 50.0}}</code></p>
+<h3 id="get-apitraceslimit100agentstatus"><code>GET /api/traces?limit=100&amp;agent=&amp;status=</code><a class="headerlink" href="#get-apitraceslimit100agentstatus" title="Link to this section">#</a></h3>
+<p><code>[{"id", "run_id", "agent", "prompt_version", "provider", "model", "status", "attempts", "latency_ms",
+"tokens_in", "tokens_out", "cost_usd", "error", "created_at"}]</code></p>
+<h3 id="feedback-feeds-the-improvement-loop">Feedback (feeds the improvement loop)<a class="headerlink" href="#feedback-feeds-the-improvement-loop" title="Link to this section">#</a></h3>
+<ul>
+<li><code>POST /api/feedback</code> <code>{"target_type": "evaluation | hint | report | notes | answer | recap", "target_id": "…",
+  "rating": 1 | -1, "reason": "helpful | too_harsh | too_lenient | generic | wrong | other", "comment": ""}</code> → <code>{"id"}</code></li>
+<li><code>GET /api/feedback/summary</code> → <code>{"total", "positive", "negative", "by_target": {"evaluation": {"up": 3, "down": 1}},
+  "reasons": {"generic": 2}, "recent": [{"id", "target_type", "target_id", "rating", "reason", "comment", "created_at"}],
+  "guidance": {"EvaluatorAgent": "…text injected into the agent's prompt…"}}</code></li>
+<li><code>GET /api/feedback/export</code> → JSONL download (each line: feedback + the rated content) for growing the eval set.</li>
+</ul>
+<h3 id="evals">Evals<a class="headerlink" href="#evals" title="Link to this section">#</a></h3>
+<ul>
+<li><code>POST /api/evals/run</code> → <code>{"job_id"}</code></li>
+<li><code>GET /api/evals/latest</code> → <code>null</code> or <code>{"id", "created_at", "summary": {"cases", "passed", "pass_rate", "mean_abs_error",
+  "providers": {"ollama": 10}}, "cases": [{"id", "question", "expected": [min, max], "got", "passed", "provider", "status"}]}</code></li>
+</ul>
+<h3 id="get-apitemplates"><code>GET /api/templates</code><a class="headerlink" href="#get-apitemplates" title="Link to this section">#</a></h3>
+<p><code>[{"id": "general", "name": "General meeting", "description": "…", "sections": ["Overview", "Discussion", "Next steps"]}]</code></p>
+<h3 id="post-apiextract-text-multipart-field-file-pdf-docx-txt-md"><code>POST /api/extract-text</code> (multipart, field <code>file</code>: .pdf .docx .txt .md)<a class="headerlink" href="#post-apiextract-text-multipart-field-file-pdf-docx-txt-md" title="Link to this section">#</a></h3>
+<p>→ <code>{"text": "…", "filename": "resume.pdf", "chars": 5231}</code></p>
+<hr />
+<h2 id="interview-coach">Interview coach<a class="headerlink" href="#interview-coach" title="Link to this section">#</a></h2>
+<h3 id="targets-a-job-youre-preparing-for">Targets (a job you're preparing for)<a class="headerlink" href="#targets-a-job-youre-preparing-for" title="Link to this section">#</a></h3>
+<ul>
+<li><code>POST /api/targets</code> <code>{"title"?, "company"?, "resume_text", "jd_text"}</code> → <code>201 {"target": Target, "job_id"}</code>
+  (starts the prep pipeline in the background)</li>
+<li><code>GET /api/targets</code> → <code>[{"id", "title", "company", "status", "created_at", "match_score", "question_count",
+  "story_count", "session_count"}]</code></li>
+<li><code>GET /api/targets/{id}</code> → <code>Target</code></li>
+<li><code>DELETE /api/targets/{id}</code> → <code>{"ok": true}</code></li>
+<li><code>POST /api/targets/{id}/prepare</code> → <code>{"job_id"}</code> (re-run the full prep pipeline)</li>
+</ul>
+<pre><code class="language-text">Target = {id, title, company, status: &quot;new|preparing|ready|failed&quot;, job_id, resume_text, jd_text,
+          profile: CandidateProfile|null, job: JobAnalysis|null, fit: FitAnalysis|null,
+          meta: {profile?: Meta, job?: Meta, fit?: Meta, stories?: Meta, questions?: Meta},
+          created_at, updated_at}
+CandidateProfile = {name, headline, years_experience, skills: [str],
+                    roles: [{title, company, period, highlights: [str]}],
+                    projects: [str], education: [str], achievements: [str]}
+JobAnalysis = {title, company, seniority, must_have_skills: [str], nice_to_have_skills: [str],
+               responsibilities: [str], competencies: [{name, weight: 1-5, why}],
+               interview_focus: [str], keywords: [str]}
+FitAnalysis = {match_score: 0-100, summary, strengths: [{skill, evidence}],
+               gaps: [{skill, mitigation}], talking_points: [str]}
+</code></pre>
+<h3 id="question-bank-and-story-bank">Question bank and story bank<a class="headerlink" href="#question-bank-and-story-bank" title="Link to this section">#</a></h3>
+<ul>
+<li><code>GET /api/targets/{id}/questions</code> → <code>[Question]</code></li>
+<li><code>POST /api/targets/{id}/questions</code> <code>{"text", "category"?, "competency"?, "difficulty"?}</code> → <code>Question</code></li>
+<li><code>DELETE /api/questions/{id}</code> → <code>{"ok": true}</code></li>
+<li><code>GET /api/targets/{id}/stories</code> → <code>[Story]</code></li>
+<li><code>POST /api/targets/{id}/stories</code> <code>{"title", "situation", "task", "action", "result", "competencies"?, "metrics"?}</code> → <code>Story</code></li>
+<li><code>PUT /api/stories/{id}</code> (partial) → <code>Story</code></li>
+<li><code>DELETE /api/stories/{id}</code> → <code>{"ok": true}</code></li>
+</ul>
+<pre><code class="language-text">Question = {id, target_id, text, category: &quot;behavioral|technical|role|situational|motivation|system_design|culture&quot;,
+            competency, difficulty: 1-3, why_asked, good_answer_signals: [str],
+            source: &quot;generated|user|debrief&quot;, times_asked, last_score, last_asked_at}
+Story = {id, target_id, title, situation, task, action, result, competencies: [str], metrics: [str],
+         source: &quot;generated|user&quot;, updated_at}
+</code></pre>
+<h3 id="practice-sessions">Practice sessions<a class="headerlink" href="#practice-sessions" title="Link to this section">#</a></h3>
+<ul>
+<li><code>POST /api/sessions</code> <code>{"target_id", "mode": "mixed|behavioral|technical", "num_questions": 3-12,
+  "persona"?: "friendly|neutral|challenging", "answer_time_limit_sec"?, "hints"?: bool, "focus_competency"?}</code>
+  → <code>201 Session</code> (includes the first turn)</li>
+<li><code>GET /api/sessions?target_id=</code> → <code>[{"id", "target_id", "target_title", "status", "mode", "started_at", "ended_at",
+  "overall_score", "answered"}]</code></li>
+<li><code>GET /api/sessions/{id}</code> → <code>Session</code></li>
+<li><code>POST /api/sessions/{id}/hints</code> <code>{"turn_id", "transcript", "elapsed_sec"}</code> →
+  <code>{"hints": [Hint], "star": {"situation", "task", "action", "result"}, "metrics": AnswerMetrics}</code>
+  (practice only; call every ~4-5 s while answering)</li>
+<li><code>POST /api/sessions/{id}/answer</code> <code>{"turn_id", "answer_text", "duration_sec", "self_rating"?: 1-5}</code> →
+  <code>{"turn": Turn, "next_turn": Turn | null, "done": bool}</code></li>
+<li><code>POST /api/sessions/{id}/skip</code> <code>{"turn_id"}</code> → <code>{"next_turn": Turn | null, "done": bool}</code></li>
+<li><code>POST /api/sessions/{id}/end</code> → <code>{"job_id"}</code> (builds the session report; status <code>finishing</code> → <code>done</code>)</li>
+</ul>
+<pre><code class="language-text">Session = {id, target_id, target_title, status: &quot;active|finishing|done|failed&quot;,
+           config: {mode, num_questions, persona, answer_time_limit_sec, hints, focus_competency},
+           plan: [question_id], turns: [Turn], current_turn_id, report: SessionReport|null,
+           overall_score, job_id, started_at, ended_at}
+Turn = {id, idx, kind: &quot;main|followup&quot;, parent_turn_id, question_id, question_text, competency, category,
+        prep: {why_asked, good_answer_signals: [str], stories: [{id, title, result}], tips: [str]} | null,
+        answer_text, duration_sec, self_rating: 1-5|null, metrics: AnswerMetrics|null, evaluation: Evaluation|null,
+        decision: {action: &quot;follow_up|next&quot;, reason, follow_up_question} | null,
+        status: &quot;asked|answered|skipped&quot;, created_at, answered_at}
+Hint = {id, kind: &quot;structure|delivery|time|content&quot;, text, severity: &quot;info|nudge|warn&quot;}
+AnswerMetrics = {word_count, duration_sec, wpm, filler_count, filler_rate, fillers: {word: count},
+                 hedge_count, i_count, we_count, numbers_count,
+                 star: {situation: bool, task: bool, action: bool, result: bool},
+                 jd_terms: [str],                 # job-description terms used in the answer (final metrics only)
+                 top_words: [{word, count}]}      # content words used 3+ times (final metrics only)
+Evaluation = {overall: 1.0-5.0, scores: {structure, relevance, specificity, impact, communication,
+              technical_depth: int|null}, summary, strengths: [str], improvements: [str],
+              missing_elements: [str], evidence_quotes: [str], better_answer_outline: [str],
+              competency_signal: 1-5, calibration_notes: [str],
+              hire_signal: &quot;strong|lean_hire|lean_no|no&quot;,   # debrief-style read of this answer
+              self_rating_gap: float|null,                  # overall - self_rating (null if no self rating)
+              meta}
+SessionReport = {headline, overall_score, competency_scores: [{competency, score, delta}],
+                 strengths: [str], improvements: [str], drills: [{title, instructions, competency}],
+                 next_focus: [str], encouragement, meta}
+</code></pre>
+<h3 id="progress">Progress<a class="headerlink" href="#progress" title="Link to this section">#</a></h3>
+<p><code>GET /api/progress?target_id=</code> →</p>
+<pre><code class="language-json">{&quot;competencies&quot;: [{&quot;competency&quot;: &quot;Ownership&quot;, &quot;score&quot;: 3.4, &quot;n&quot;: 4, &quot;last_practiced&quot;: &quot;…&quot;, &quot;next_due&quot;: &quot;…&quot;,
+                   &quot;due&quot;: true, &quot;history&quot;: [{&quot;at&quot;: &quot;…&quot;, &quot;score&quot;: 3.0}]}],
+ &quot;sessions&quot;: [{&quot;id&quot;: &quot;ses_…&quot;, &quot;started_at&quot;: &quot;…&quot;, &quot;overall_score&quot;: 3.6}],
+ &quot;due_count&quot;: 2, &quot;totals&quot;: {&quot;sessions&quot;: 3, &quot;answers&quot;: 14, &quot;avg_score&quot;: 3.5}}
+</code></pre>
+<hr />
+<h2 id="meeting-notes">Meeting notes<a class="headerlink" href="#meeting-notes" title="Link to this section">#</a></h2>
+<ul>
+<li><code>POST /api/meetings</code> <code>{"title"?, "template"?, "consent_confirmed": true, "consent_note"?}</code> → <code>201 Meeting</code>
+  (status <code>live</code>; <code>400</code> if consent isn't confirmed)</li>
+<li><code>GET /api/meetings?q=&amp;limit=50</code> → <code>[{"id", "title", "template", "status", "started_at", "ended_at", "duration_sec",
+  "segment_count", "snippet"}]</code> — with <code>q</code>, full-text search; <code>snippet</code> marks matches with <code>\u0002…\u0003</code>
+  (escape the text first, then turn the markers into <code>&lt;mark&gt;</code>).</li>
+<li><code>GET /api/meetings/{id}</code> → <code>Meeting</code></li>
+<li><code>PUT /api/meetings/{id}</code> <code>{"title"?, "user_notes"?, "template"?, "notes"?: EnhancedNotes}</code> → <code>Meeting</code></li>
+<li><code>DELETE /api/meetings/{id}</code> → <code>{"ok": true}</code></li>
+<li><code>POST /api/meetings/{id}/segments</code> <code>{"speaker", "text", "t0", "t1"}</code> → <code>Segment</code> (used when the browser does
+  speech recognition)</li>
+<li><code>POST /api/meetings/{id}/stop</code> → <code>{"job_id"}</code> (ends the meeting, writes enhanced notes, indexes)</li>
+<li><code>POST /api/meetings/{id}/enhance</code> <code>{"template"?}</code> → <code>{"job_id"}</code> (re-run on a saved meeting)</li>
+<li><code>GET /api/meetings/{id}/search?q=&amp;scope=meeting|all</code> → <code>{"hits": [{"meeting_id", "meeting_title", "segment_id",
+  "speaker", "t0", "text", "snippet"}], "took_ms"}</code> — works live: finds where something was said.</li>
+<li><code>POST /api/meetings/{id}/recap</code> <code>{"minutes": 5}</code> (0 = whole meeting) → <code>{"recap": [str], "decisions": [str],
+  "open_questions": [str], "window": {"from_sec", "to_sec"}, "meta"}</code> — works live; summarizes only what was said.</li>
+<li><code>POST /api/meetings/{id}/ask</code> <code>{"question"}</code> → <code>{"answer", "citations": [{"segment_id", "speaker", "t0", "text"}],
+  "not_found": bool, "meta"}</code> — only after the meeting is saved (<code>409</code> while live).</li>
+<li><code>POST /api/ask</code> <code>{"question"}</code> → same shape across all saved meetings; citations add <code>meeting_id</code>, <code>meeting_title</code>.</li>
+<li><code>POST /api/meetings/{id}/redact</code> <code>{"minutes": 2}</code> → <code>{"deleted": 5}</code> — privacy control, works live: deletes the
+  last N minutes of transcript (and its search index entries).</li>
+<li><code>GET /api/recipes</code> → <code>[{"id": "follow_up_email", "name": "Follow-up email", "description"}]</code></li>
+<li><code>POST /api/meetings/{id}/recipe</code> <code>{"recipe": "follow_up_email | slack_summary | todo_list"}</code> →
+  <code>{"recipe", "title", "body", "meta"}</code> — saved meetings only (<code>409</code> while live).</li>
+<li><code>GET /api/meetings/{id}/export.md</code> → Markdown file</li>
+<li><code>POST /api/meetings/{id}/to-practice</code> <code>{"target_id"}</code> → <code>{"added": 3, "questions": [Question]}</code>
+  (interview-debrief notes: adds the questions you were asked to that target's practice bank)</li>
+</ul>
+<pre><code class="language-text">Meeting = {id, title, template, status: &quot;live|processing|ready|failed&quot;, consent_confirmed, consent_note,
+           started_at, ended_at, duration_sec, user_notes, segments: [Segment],
+           notes: EnhancedNotes|null, notes_md, job_id}
+Segment = {id, speaker: &quot;Me|Them|…&quot;, t0, t1, text}
+EnhancedNotes = {title, summary, sections: [{heading, bullets: [{text, source: &quot;you|ai&quot;, refs: [segment_id]}]}],
+                 decisions: [str], action_items: [{task, owner, due}], open_questions: [str],
+                 questions_asked: [str], meta}
+</code></pre>
+<hr />
+<h2 id="speech-to-text">Speech-to-text<a class="headerlink" href="#speech-to-text" title="Link to this section">#</a></h2>
+<h3 id="ws-apisttwsmodepracticemeetingmeeting_idchannelmethemoffsetseconds"><code>WS /api/stt/ws?mode=practice|meeting&amp;meeting_id=&amp;channel=me|them&amp;offset=&lt;seconds&gt;</code><a class="headerlink" href="#ws-apisttwsmodepracticemeetingmeeting_idchannelmethemoffsetseconds" title="Link to this section">#</a></h3>
+<ol>
+<li>Server sends <code>{"type": "ready", "engine", "model", "device"}</code> — or <code>{"type": "unavailable", "detail"}</code> and closes
+   (the client then falls back to the browser's speech recognition, mic only).</li>
+<li>Client streams <strong>binary</strong> frames: 16 kHz mono PCM16 little-endian, ~100-250 ms per frame.</li>
+<li>Server sends <code>{"type": "partial", "channel", "text"}</code> while you speak and
+   <code>{"type": "final", "channel", "text", "t0", "t1", "segment_id"}</code> at each pause.
+   In meeting mode, finals are saved as segments: channel <code>me</code> → speaker <code>Me</code>, <code>them</code> → <code>Them</code>.</li>
+<li>Client sends <code>{"type": "stop"}</code>; server flushes, sends remaining finals, then <code>{"type": "done"}</code> and closes.</li>
+</ol>
+<h3 id="post-apistttranscribe-multipart-file-webmwavoggmp3"><code>POST /api/stt/transcribe</code> (multipart <code>file</code>: webm/wav/ogg/mp3)<a class="headerlink" href="#post-apistttranscribe-multipart-file-webmwavoggmp3" title="Link to this section">#</a></h3>
+<p>→ <code>{"text", "segments": [{"t0", "t1", "text"}], "duration_sec", "engine"}</code></p>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <strong style="color:var(--fg)">Interview App</strong><br>
+      Local-first practice coach and meeting notes. FastAPI · SQLite · Ollama · faster-whisper.
+    </div>
+    <nav aria-label="Footer">
+      <a href="../app/">Live demo</a>
+      <a href="../index.html#install">Install</a>
+      <a href="../docs/architecture.html">Architecture</a>
+      <a href="../docs/api.html">API</a>
+      <a href="../docs/research.html">Research</a>
+      <a href="../docs/responsible-use.html">Responsible use</a>
+      <a href="https://github.com/Manish-GenAI/Interview-App/tree/claude/sweet-pascal-pnr2pl">Source (private repository)</a>
+    </nav>
+  </div>
+</footer>
+<script src="../js/site.js" defer></script>
+</body>
+</html>

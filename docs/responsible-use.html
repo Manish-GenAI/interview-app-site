@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Responsible use and privacy · Interview App</title>
+  <meta name="description" content="Interview App is built to help you prepare for interviews and to take transparent notes in meetings. It is deliberately not a tool for getting covert help ">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../css/site.css">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../index.html" aria-label="Interview App home"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2459c4"/><path d="M9 10.5h14a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-7.5L11 24v-3.5H9A1.5 1.5 0 0 1 7.5 19v-7A1.5 1.5 0 0 1 9 10.5z" fill="#fff"/></svg>Interview App</a>
+    <nav class="nav" aria-label="Main">
+      <a href="../index.html#how" class="hide-sm">How it works</a>
+      <a href="../index.html#agents" class="hide-sm">Agents</a>
+      <a href="../index.html#install">Install</a>
+      <a href="../docs/architecture.html" aria-current="page">Docs</a>
+      <a class="btn btn-primary btn-sm" href="../app/">Live demo</a>
+    </nav>
+  </div>
+</header>
+<div class="wrap doc-layout">
+  <aside class="doc-aside" aria-label="Page navigation">
+    <details>
+      <summary>On this page</summary>
+      <div class="toc">
+<ul>
+<li><a href="#what-it-does">What it does</a></li>
+<li><a href="#what-it-deliberately-does-not-do">What it deliberately does not do</a></li>
+<li><a href="#recording-consent-not-legal-advice">Recording consent (not legal advice)</a></li>
+<li><a href="#privacy">Privacy</a></li>
+</ul>
+</div>
+
+    </details>
+    <nav class="doc-pages" aria-label="Documentation">
+      <p class="toc-title">Documentation</p>
+      <ul><li><a href="architecture.html">Architecture</a></li><li><a href="api.html">API</a></li><li><a href="research.html">Research</a></li><li><a href="responsible-use.html" aria-current="page">Responsible use</a></li></ul>
+    </nav>
+  </aside>
+  <main id="content" class="prose">
+    <p class="doc-meta"><a href="../index.html">Interview App</a> · Documentation</p>
+    <h1 id="responsible-use-and-privacy">Responsible use and privacy<a class="headerlink" href="#responsible-use-and-privacy" title="Link to this section">#</a></h1>
+<p>Interview App is built to help you <strong>prepare</strong> for interviews and to take <strong>transparent</strong> notes in meetings.
+It is deliberately not a tool for getting covert help during a live interview.</p>
+<h2 id="what-it-does">What it does<a class="headerlink" href="#what-it-does" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>Practice coaching.</strong> It generates questions from your resume and a job description, runs spoken mock
+  interviews, gives live structure and delivery hints <em>inside practice sessions</em>, scores your answers and tracks
+  your progress.</li>
+<li><strong>Transparent meeting notes.</strong> It transcribes meetings you have consent to record, in a normal visible window
+  with a recording indicator. During the meeting it can search what was said and give you a recap. After the meeting
+  it writes enhanced notes, answers questions with citations and drafts follow-ups.</li>
+<li><strong>Interview debriefs.</strong> After a real interview, it captures <em>your own</em> recap and turns the questions you were
+  asked into practice material.</li>
+</ul>
+<h2 id="what-it-deliberately-does-not-do">What it deliberately does not do<a class="headerlink" href="#what-it-deliberately-does-not-do" title="Link to this section">#</a></h2>
+<ul>
+<li>It doesn't hide from screen sharing, recording, proctoring software or the task bar. There is no stealth mode.</li>
+<li>It doesn't generate answers for you to say during a live meeting or interview. Live meeting tools only search
+  or summarise what was already said. AI Q&amp;A over a meeting unlocks once the meeting is saved.</li>
+<li>It doesn't join calls as a bot or capture audio without your action. You start each audio source yourself, and
+  the browser shows its own sharing indicator.</li>
+<li>It doesn't store audio or build voiceprints. Only text is kept.</li>
+</ul>
+<p>Using AI assistance in a live interview without the interviewer's knowledge misrepresents your abilities. It also
+usually breaks the hiring process's rules. Practise with the coach, then interview as yourself.</p>
+<h2 id="recording-consent-not-legal-advice">Recording consent (not legal advice)<a class="headerlink" href="#recording-consent-not-legal-advice" title="Link to this section">#</a></h2>
+<p>Laws differ by place, and calls often span several jurisdictions. The app asks you to confirm consent before every
+meeting and gives you a disclosure line to paste into the meeting chat.</p>
+<ul>
+<li><strong>United States:</strong> federal law and most states require one party's consent. About a dozen states require
+  <strong>all parties'</strong> consent, including California, Florida, Illinois, Maryland, Massachusetts, Montana,
+  New Hampshire, Pennsylvania and Washington. When participants are in different states, follow the strictest rule.</li>
+<li><strong>EU / EEA (GDPR):</strong> recording is processing of personal data. You need a lawful basis and must tell people
+  before recording. Some countries criminalise secret recording.</li>
+<li><strong>United Kingdom:</strong> a participant recording for their own use is generally lawful. Organisations need a lawful
+  basis and must make reasonable efforts to inform people.</li>
+<li><strong>India:</strong> there is no single statute. Courts have treated secret recording as a privacy violation in several
+  cases, so get consent.</li>
+</ul>
+<p><strong>Practical rule:</strong> tell everyone at the start ("I'm using a note-taking app that transcribes this call"), and stop
+if anyone objects. Use headphones so the app doesn't capture other people's audio through your microphone.</p>
+<h2 id="privacy">Privacy<a class="headerlink" href="#privacy" title="Link to this section">#</a></h2>
+<ul>
+<li>Everything is stored locally under <code>data/</code> (by default <code>D:\Interview APP\data</code> when installed there).</li>
+<li><strong>Delete the last few minutes</strong> of a transcript at any time during a meeting. Delete whole meetings from the
+  meeting page. Set <strong>retention days</strong> in Settings to purge old meetings automatically.</li>
+<li><strong>Local Whisper</strong> keeps audio on your PC. The <strong>browser fallback</strong> (used only when local Whisper isn't installed)
+  sends microphone audio to your browser vendor's speech service (Google for Chrome, Microsoft for Edge).</li>
+<li><strong>Claude (optional):</strong> when enabled, the text of each request, such as an answer transcript or meeting excerpts,
+  is sent to Anthropic's API. Leave the key empty to stay fully local with Ollama.</li>
+<li>Your API key is stored in <code>data/secrets.json</code> (or read from the <code>ANTHROPIC_API_KEY</code> environment variable) and is
+  never returned by the API or shown in the UI.</li>
+<li>The server listens on <code>127.0.0.1</code> only and rejects requests addressed to other host names.</li>
+</ul>
+  </main>
+</div>
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <strong style="color:var(--fg)">Interview App</strong><br>
+      Local-first practice coach and meeting notes. FastAPI · SQLite · Ollama · faster-whisper.
+    </div>
+    <nav aria-label="Footer">
+      <a href="../app/">Live demo</a>
+      <a href="../index.html#install">Install</a>
+      <a href="../docs/architecture.html">Architecture</a>
+      <a href="../docs/api.html">API</a>
+      <a href="../docs/research.html">Research</a>
+      <a href="../docs/responsible-use.html">Responsible use</a>
+      <a href="https://github.com/Manish-GenAI/Interview-App/tree/claude/sweet-pascal-pnr2pl">Source (private repository)</a>
+    </nav>
+  </div>
+</footer>
+<script src="../js/site.js" defer></script>
+</body>
+</html>

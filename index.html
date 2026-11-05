@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interview App: practice coach and meeting notes</title>
+  <meta name="description" content="A local-first interview practice coach and transparent meeting-notes tool. Runs on your own PC with Ollama; Claude is optional. Try the in-browser demo or install it on Windows.">
+  <meta property="og:title" content="Interview App: practice coach and meeting notes">
+  <meta property="og:description" content="Spoken mock interviews with rubric scoring, plus consent-first meeting notes. Local AI on your GPU.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-doc" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></g></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3l1.9 4.9L18 9.8l-5.1 1.9L11 17l-1.9-5.3L4 9.8l5.1-1.9z"/><path d="M18.5 14.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></g></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></g></symbol>
+    <symbol id="i-score" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7 16v-5M12 16V6M17 16v-8"/></g></symbol>
+    <symbol id="i-report" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v3H9z"/><path d="M8 4.5H6.5A1.5 1.5 0 0 0 5 6v13.5A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H16M8.5 11h7M8.5 15h4.5"/></g></symbol>
+    <symbol id="i-loop" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.4-4.6L4 8M4 3.5V8h4.5M4 13a8 8 0 0 0 14.4 4.6L20 16M20 20.5V16h-4.5"/></g></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></g></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h1.5M7 8.5v7M10.5 5v14M14 8v8M17.5 10v4M21 12h-1.5"/></g></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2.5"/></g></symbol>
+    <symbol id="i-notes" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 3.5h10l3 3v13a1 1 0 0 1-1 1h-12a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"/><path d="M8 10h8M8 13.5h8M8 17h5"/></g></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9.5L4 20z"/><path d="M8 9h8M8 12.5h5"/></g></symbol>
+    <symbol id="i-person" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></g></symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M14.5 7H21v6.5"/></g></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.2"/></g></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/></g></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 7.5L4 12l4.5 4.5M15.5 7.5L20 12l-4.5 4.5"/></g></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l10.5-6.5z"/></g></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/></g></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></g></symbol>
+  </defs>
+</svg>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="./" aria-label="Interview App home">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#2459c4"/><path d="M9 10.5h14a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5h-7.5L11 24v-3.5H9A1.5 1.5 0 0 1 7.5 19v-7A1.5 1.5 0 0 1 9 10.5z" fill="#fff"/></svg>
+      Interview App
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#how" class="hide-sm">How it works</a>
+      <a href="#agents" class="hide-sm">Agents</a>
+      <a href="#screens" class="hide-sm">Screens</a>
+      <a href="#install">Install</a>
+      <a href="docs/architecture.html">Docs</a>
+      <a class="btn btn-primary btn-sm" href="app/">Live demo</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">Local-first · runs on your PC</span>
+        <h1 id="hero-title">Interview App</h1>
+        <p class="lead">A practice coach for interviews and a transparent note-taker for meetings. A team of AI agents runs on your own PC with Ollama on your GPU. Claude is optional.</p>
+        <ul class="chips" aria-label="Highlights">
+          <li>Spoken mock interviews</li>
+          <li>Rubric scores with evidence</li>
+          <li>Consent-first meeting notes</li>
+          <li>Private, on-device speech-to-text</li>
+        </ul>
+        <div class="cta">
+          <a class="btn btn-primary" href="app/"><svg aria-hidden="true"><use href="#i-play"/></svg>Try the live demo</a>
+          <a class="btn" href="#install"><svg aria-hidden="true"><use href="#i-download"/></svg>Install on Windows</a>
+          <a class="btn" href="https://github.com/Manish-GenAI/Interview-App/tree/claude/sweet-pascal-pnr2pl"><svg aria-hidden="true"><use href="#i-code"/></svg>Source on GitHub (private)</a>
+        </div>
+        <p class="note">The demo runs entirely in your browser with built-in rules. Install the app to use local AI models and private transcription.</p>
+      </div>
+      <div class="shot-frame">
+        <div class="bar" aria-hidden="true"><i></i><i></i><i></i></div>
+        <img src="img/practice.webp" width="2400" height="1500" alt="Mock interview screen: the interviewer's question, a live coaching panel with STAR progress, and the answer box.">
+      </div>
+    </div>
+  </section>
+
+  <section id="what" aria-labelledby="what-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">What it does</span>
+        <h2 id="what-title">Two tools, one agent platform</h2>
+        <p>Prepare for a specific job, practise out loud with feedback, and keep honest notes of the meetings you're allowed to record. All of it on your machine.</p>
+      </div>
+      <div class="grid-2">
+        <article class="card coach">
+          <h3><span class="icon-badge"><svg aria-hidden="true"><use href="#i-person"/></svg></span>Interview Coach</h3>
+          <ul>
+            <li>Paste your resume and a job description. Agents build a <strong>prep pack</strong>: your profile, the role's competencies, fit and honest gaps, STAR stories drafted from your real experience, and about 20 likely questions.</li>
+            <li><strong>Spoken mock interviews.</strong> The interviewer reads each question aloud. You answer by voice or by typing, with live structure and delivery hints. Hints appear only in practice.</li>
+            <li><strong>A coach's debrief for every answer</strong>: rubric scores (structure, relevance, specificity, impact, communication, plus technical depth for technical questions), quotes from your answer as evidence, specific fixes, a stronger structure, and a follow-up question when something's missing.</li>
+            <li><strong>Session reports and spaced repetition.</strong> Drills target your weakest areas, and the next session starts with the competencies that are weak or due.</li>
+          </ul>
+        </article>
+        <article class="card notes">
+          <h3><span class="icon-badge"><svg aria-hidden="true"><use href="#i-notes"/></svg></span>Meeting Notes</h3>
+          <ul>
+            <li><strong>Consent first.</strong> You confirm everyone knows they're being transcribed. A copyable disclosure line is provided, and a visible indicator shows when audio is captured.</li>
+            <li><strong>Live transcript</strong>: <em>Me</em> from your mic, <em>Them</em> from the shared meeting tab or screen, next to your own notepad. You can <strong>search what was said</strong> and ask it to <strong>catch you up</strong>.</li>
+            <li><strong>Enhanced notes when you stop.</strong> Your notes stay as you wrote them. AI additions are marked and linked to the transcript, with decisions, action items and open questions.</li>
+            <li><strong>After the meeting</strong>: ask questions with citations, draft a follow-up email or to-do list, export Markdown, or delete the last few minutes.</li>
+          </ul>
+        </article>
+      </div>
+      <div class="card loop-card">
+        <span class="icon-badge" style="background:var(--ok-soft);color:var(--ok)"><svg aria-hidden="true"><use href="#i-loop"/></svg></span>
+        <p><strong>The two connect.</strong> After a real interview, record or type your own debrief with the <em>Interview debrief</em> template. One click turns the questions you were asked into practice questions for that job.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">How it works</span>
+        <h2 id="how-title">The workflows, end to end</h2>
+        <p>Each workflow is a fixed pipeline. Code orchestrates the specialist agents, and every step finishes even when no AI model is available.</p>
+      </div>
+
+      <div class="flow-block">
+        <h3 class="flow-title"><span class="tag coach">Coach</span>Prepare and practise</h3>
+        <ol class="flow n6 flow-coach">
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-doc"/></svg></div><h4>Add a target</h4><p>Paste or upload your resume and the job description.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-spark"/></svg></div><h4>Prep pack</h4><p>Five agents analyse you and the role, then draft stories and questions.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-mic"/></svg></div><h4>Mock interview</h4><p>Questions are read aloud. You answer out loud with live practice hints.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-score"/></svg></div><h4>Debrief</h4><p>Rate yourself, then see the scores, evidence and a stronger structure.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-report"/></svg></div><h4>Session report</h4><p>Patterns across your answers, 2–4 drills, and what to practise next.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-loop"/></svg></div><h4>Spaced repetition</h4><p>Each competency's score and review date are updated.</p></li>
+        </ol>
+        <p class="flow-note"><svg aria-hidden="true"><use href="#i-loop"/></svg>The next session puts weak and due competencies first, weighted by what the job cares about.</p>
+      </div>
+
+      <div class="flow-block">
+        <h3 class="flow-title"><span class="tag notes">Notes</span>Capture and remember</h3>
+        <ol class="flow n5 flow-notes">
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-shield"/></svg></div><h4>Consent</h4><p>Confirm everyone knows. Copy the disclosure line into the chat.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-wave"/></svg></div><h4>Live capture</h4><p>Transcript labelled Me and Them, alongside your own notepad.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-search"/></svg></div><h4>Search and catch up</h4><p>Find where something was said, or get a recap of the last few minutes.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-notes"/></svg></div><h4>Enhanced notes</h4><p>On Stop, your notes are expanded, with each AI addition linked to its source.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-chat"/></svg></div><h4>Ask and draft</h4><p>Cited answers across saved meetings, plus email and to-do drafts.</p></li>
+        </ol>
+      </div>
+
+      <div class="flow-block">
+        <h3 class="flow-title"><span class="tag live">Loop</span>Debrief into practice</h3>
+        <ol class="flow n4">
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-person"/></svg></div><h4>Real interview</h4><p>You interview as yourself. The app isn't used during it.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-mic"/></svg></div><h4>Your debrief</h4><p>Afterwards, dictate or type what you were asked and how it went.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-spark"/></svg></div><h4>Questions extracted</h4><p>The notes agent lists the questions you were asked.</p></li>
+          <li class="step"><div class="step-top"><span class="num" aria-hidden="true"></span><svg aria-hidden="true"><use href="#i-loop"/></svg></div><h4>Into your practice bank</h4><p>One click adds them to that job's questions for the next session.</p></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section id="agents" aria-labelledby="agents-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">The agents</span>
+        <h2 id="agents-title">14 specialists, each with one job</h2>
+        <p>Every agent takes a typed input and returns a validated, typed output. Code passes results from one agent to the next. Each agent also has a rule-based fallback, so a pipeline always completes.</p>
+      </div>
+
+      <figure class="diagram-wrap" aria-labelledby="dg-caption">
+        <div class="diagram-scroll">
+          <svg viewBox="0 0 960 392" role="img" aria-labelledby="dg-t dg-d">
+            <title id="dg-t">How the parts fit together</title>
+            <desc id="dg-d">You use the browser UI. Requests go to orchestrators, which run the coach and notes pipelines with a persisted job runner. Audio is streamed to local speech-to-text, which feeds the transcript to the orchestrators. Orchestrators call 14 specialist agents and store data in SQLite with search. Agents call models through a provider router with circuit breakers, adaptive routing and a budget guard, which picks Ollama on the local GPU or the optional Claude API. If all providers fail, agents use built-in rules. Every run is written to traces, which feed routing statistics back to the router. Your feedback becomes guidance for the agents.</desc>
+            <defs>
+              <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="dg-head"/></marker>
+            </defs>
+            <!-- top row -->
+            <rect class="dg-box soft" x="176" y="24" width="190" height="62" rx="10"/>
+            <text class="dg-title" x="190" y="50">Speech-to-text</text><text class="dg-sub" x="190" y="70">local Whisper, live</text>
+            <rect class="dg-box soft" x="402" y="24" width="190" height="62" rx="10"/>
+            <text class="dg-title" x="416" y="50">Your feedback</text><text class="dg-sub" x="416" y="70">becomes agent guidance</text>
+            <!-- main row -->
+            <rect class="dg-box" x="12" y="165" width="128" height="70" rx="10"/>
+            <text class="dg-title" x="26" y="193">You</text><text class="dg-sub" x="26" y="213">browser UI</text>
+            <rect class="dg-box" x="176" y="145" width="190" height="110" rx="10"/>
+            <text class="dg-title" x="190" y="172">Orchestrators</text>
+            <text class="dg-sub" x="190" y="194">coach + notes pipelines</text><text class="dg-sub" x="190" y="212">persisted job runner</text><text class="dg-sub" x="190" y="230">resumes after restarts</text>
+            <rect class="dg-box accent" x="402" y="145" width="190" height="110" rx="10"/>
+            <text class="dg-title" x="416" y="172">14 specialist agents</text>
+            <text class="dg-sub" x="416" y="194">typed in → typed out</text><text class="dg-sub" x="416" y="212">schema-checked output</text><text class="dg-sub" x="416" y="230">repair, salvage, rules</text>
+            <rect class="dg-box" x="628" y="145" width="160" height="110" rx="10"/>
+            <text class="dg-title" x="642" y="172">Provider router</text>
+            <text class="dg-sub" x="642" y="194">circuit breakers</text><text class="dg-sub" x="642" y="212">adaptive routing</text><text class="dg-sub" x="642" y="230">monthly budget guard</text>
+            <rect class="dg-box" x="824" y="118" width="124" height="62" rx="10"/>
+            <text class="dg-title" x="838" y="144">Ollama</text><text class="dg-sub" x="838" y="164">local GPU</text>
+            <rect class="dg-box dashed" x="824" y="220" width="124" height="62" rx="10"/>
+            <text class="dg-title" x="838" y="246">Claude API</text><text class="dg-sub" x="838" y="266">optional</text>
+            <!-- bottom row -->
+            <rect class="dg-box soft" x="176" y="314" width="190" height="62" rx="10"/>
+            <text class="dg-title" x="190" y="340">SQLite + search</text><text class="dg-sub" x="190" y="360">all data in data/</text>
+            <rect class="dg-box dashed" x="402" y="314" width="190" height="62" rx="10"/>
+            <text class="dg-title" x="416" y="340">Built-in rules</text><text class="dg-sub" x="416" y="360">when no model answers</text>
+            <rect class="dg-box soft" x="628" y="314" width="160" height="62" rx="10"/>
+            <text class="dg-title" x="642" y="340">Traces</text><text class="dg-sub" x="642" y="360">every run, every try</text>
+            <!-- arrows -->
+            <path class="dg-line" d="M140 200H174" marker-end="url(#ah)"/>
+            <path class="dg-line" d="M76 165V55H174" marker-end="url(#ah)"/><text class="dg-label" x="84" y="112">audio</text>
+            <path class="dg-line" d="M271 86V143" marker-end="url(#ah)"/><text class="dg-label" x="279" y="120">transcript</text>
+            <path class="dg-line" d="M366 200H400" marker-end="url(#ah)"/>
+            <path class="dg-line" d="M497 86V143" marker-end="url(#ah)"/><text class="dg-label" x="505" y="120">guidance</text>
+            <path class="dg-line" d="M592 200H626" marker-end="url(#ah)"/>
+            <path class="dg-line" d="M788 180L822 150" marker-end="url(#ah)"/>
+            <path class="dg-line dashed" d="M788 220L822 250" marker-end="url(#ah)"/>
+            <path class="dg-line" d="M271 255V312" marker-end="url(#ah)"/>
+            <path class="dg-line dashed" d="M497 255V312" marker-end="url(#ah)"/><text class="dg-label" x="505" y="290">if all fail</text>
+            <path class="dg-line" d="M570 255L648 312" marker-end="url(#ah)"/>
+            <path class="dg-line" d="M708 314V257" marker-end="url(#ah)"/><text class="dg-label" x="716" y="290">routing stats</text>
+          </svg>
+        </div>
+        <figcaption id="dg-caption" class="small muted" style="margin-top:8px">How the parts fit together. Solid lines carry every request; dashed lines are optional or fallback paths.</figcaption>
+        <p class="diagram-hint">Scroll sideways to see the whole diagram.</p>
+      </figure>
+
+      <div class="agents-group">
+        <h3><span class="tag coach">Coach</span>Interview coach agents</h3>
+        <div class="grid-3">
+          <article class="agent"><h4>ProfileAgent</h4><p class="role">Reads your resume and extracts a factual profile.</p><dl><dt>Receives</dt><dd>Resume text</dd><dt>Decides</dt><dd>Which skills, roles, achievements and numbers the resume actually supports</dd><dt>Passes to</dt><dd>Fit, StoryMiner, QuestionPlanner</dd></dl></article>
+          <article class="agent"><h4>JobAnalystAgent</h4><p class="role">Works out what the employer needs and what interviews will probe.</p><dl><dt>Receives</dt><dd>Job description</dd><dt>Decides</dt><dd>Must-have vs nice-to-have skills, seniority, 4–8 weighted competencies</dd><dt>Passes to</dt><dd>Fit, StoryMiner, QuestionPlanner, Evaluator, question selection</dd></dl></article>
+          <article class="agent"><h4>FitAgent</h4><p class="role">Compares you with the role, honestly.</p><dl><dt>Receives</dt><dd>Profile + job analysis</dd><dt>Decides</dt><dd>Match score, evidenced strengths, gaps with honest mitigations, talking points</dd><dt>Passes to</dt><dd>QuestionPlanner (gaps become questions), prep overview</dd></dl></article>
+          <article class="agent"><h4>StoryMinerAgent</h4><p class="role">Drafts STAR stories from your real experience.</p><dl><dt>Receives</dt><dd>Profile + job analysis</dd><dt>Decides</dt><dd>4–8 stories, with <code>[add: …]</code> prompts where facts are missing. It never invents numbers</dd><dt>Passes to</dt><dd>Story bank, practice prep panel</dd></dl></article>
+          <article class="agent"><h4>QuestionPlannerAgent</h4><p class="role">Builds the tailored question bank.</p><dl><dt>Receives</dt><dd>Profile + job + fit + existing questions</dd><dt>Decides</dt><dd>~20 questions: category, competency, difficulty, why it's asked, what strong answers include</dd><dt>Passes to</dt><dd>Question bank → session selection → Interviewer</dd></dl></article>
+          <article class="agent"><h4>HintAgent <span class="tag live">practice only</span></h4><p class="role">Speaking coach while you answer a practice question.</p><dl><dt>Receives</dt><dd>The practice question + your partial transcript</dd><dt>Decides</dt><dd>0–2 nudges on structure or clarity. It never writes content</dd><dt>Passes to</dt><dd>Live coaching panel, with rule-based time and delivery hints</dd></dl></article>
+          <article class="agent"><h4>EvaluatorAgent</h4><p class="role">Scores each answer against a rubric.</p><dl><dt>Receives</dt><dd>Question, competency, your transcript, measured delivery metrics, role context</dd><dt>Decides</dt><dd>1–5 rubric scores, overall, verbatim evidence quotes, fixes, a restructuring outline</dd><dt>Passes to</dt><dd>Calibration in code → skill memory → session report</dd></dl></article>
+          <article class="agent"><h4>InterviewerAgent</h4><p class="role">Plays the interviewer: probe or move on.</p><dl><dt>Receives</dt><dd>Question, your answer, metrics, persona, follow-ups used</dd><dt>Decides</dt><dd>One follow-up (missing result, ownership, numbers, trade-offs) or the next question</dd><dt>Passes to</dt><dd>Session controller → next turn</dd></dl></article>
+          <article class="agent"><h4>CoachAgent</h4><p class="role">Writes the end-of-session report.</p><dl><dt>Receives</dt><dd>All turns, evaluations and competency changes</dd><dt>Decides</dt><dd>Headline, patterns across answers, 2–4 drills, next focus</dd><dt>Passes to</dt><dd>Report page and the next session's priorities</dd></dl></article>
+        </div>
+      </div>
+
+      <div class="agents-group">
+        <h3><span class="tag notes">Notes</span>Meeting notes agents</h3>
+        <div class="grid-3">
+          <article class="agent"><h4>RecapAgent <span class="tag live">live</span></h4><p class="role">"Catch me up" during a meeting.</p><dl><dt>Receives</dt><dd>Transcript of the last N minutes</dd><dt>Decides</dt><dd>3–6 points that were actually said, decisions, open questions. It never suggests replies</dd><dt>Passes to</dt><dd>Live meeting sidebar</dd></dl></article>
+          <article class="agent"><h4>ChunkNotesAgent</h4><p class="role">Reads long transcripts in parts.</p><dl><dt>Receives</dt><dd>One ~9,000-character slice of the transcript, with segment ids</dd><dt>Decides</dt><dd>Key points with references, decisions, actions, open questions</dd><dt>Passes to</dt><dd>NoteEnhancer (map → reduce)</dd></dl></article>
+          <article class="agent"><h4>NoteEnhancerAgent</h4><p class="role">Writes the final notes around yours.</p><dl><dt>Receives</dt><dd>Your typed notes + transcript (or part notes) + template</dd><dt>Decides</dt><dd>Summary, sections, details to add (with sources), decisions, action items</dd><dt>Passes to</dt><dd>Notes page, search, export, drafts, debrief → practice</dd></dl></article>
+          <article class="agent"><h4>MeetingQAAgent</h4><p class="role">Answers questions about saved meetings.</p><dl><dt>Receives</dt><dd>Your question + the most relevant excerpts (keyword + semantic search)</dd><dt>Decides</dt><dd>The answer with citations, or that it isn't in the transcript</dd><dt>Passes to</dt><dd>Ask panel; citations jump to the transcript</dd></dl></article>
+          <article class="agent"><h4>RecipeAgent</h4><p class="role">Turns saved notes into ready-to-send drafts.</p><dl><dt>Receives</dt><dd>Saved notes + a recipe</dd><dt>Decides</dt><dd>The wording of a follow-up email, team summary or to-do list</dd><dt>Passes to</dt><dd>Drafts panel (copy)</dd></dl></article>
+        </div>
+      </div>
+      <p class="code-steps"><strong>Steps done in code, not by a model:</strong> delivery metrics (pace, filler words, STAR markers, "I" vs "we"), score calibration and quote checks, the per-competency skill memory and review schedule, question selection, the meeting consent gate, instant search indexing, and keeping your own notes intact. <a href="docs/architecture.html">Read the full architecture →</a></p>
+    </div>
+  </section>
+
+  <section id="reliability" aria-labelledby="rel-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Reliability</span>
+        <h2 id="rel-title">Built to finish, and to improve</h2>
+        <p>It runs end to end without you stepping in. It recovers from errors on its own, and it learns from your sessions and feedback.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>When something goes wrong</h3>
+          <ul class="checklist">
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><strong>Validated output.</strong> Every answer is checked against a schema. Out-of-range scores are clamped, and invented quotes are rejected.</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><strong>Repair, then salvage.</strong> The model is shown its exact mistake and asked again. On the last attempt, mostly good output is kept and fixed in code.</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><strong>Fallback chain.</strong> Ollama → Claude (or the reverse), with retries and backoff. Circuit breakers skip a backend that's down.</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><strong>Always an answer.</strong> Deadlines keep the screen responsive. If no model answers, built-in rules finish the step, and the result is labelled.</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><strong>Resumable jobs.</strong> Pipelines save their progress, so a crash or restart picks up where it left off.</span></li>
+            <li><svg aria-hidden="true"><use href="#i-check"/></svg><span><strong>Speech fallback.</strong> GPU → CPU → the browser's own recognition (with a notice).</span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>How it gets better</h3>
+          <ul class="checklist improve">
+            <li><svg aria-hidden="true"><use href="#i-trend"/></svg><span><strong>It learns you.</strong> Every answer updates that competency's score and review date, so practice goes where it helps most.</span></li>
+            <li><svg aria-hidden="true"><use href="#i-trend"/></svg><span><strong>It learns from feedback.</strong> A 👍 or 👎 with a reason becomes guidance in that agent's instructions. "Too harsh" or "too lenient" adds a small, capped calibration that is shown to you.</span></li>
+            <li><svg aria-hidden="true"><use href="#i-trend"/></svg><span><strong>It learns which model works.</strong> Each agent tries the backend that has been giving it usable results.</span></li>
+            <li><svg aria-hidden="true"><use href="#i-trend"/></svg><span><strong>It's measured.</strong> A set of hand-scored answers checks the evaluator before you change models or prompts. Every run is traced.</span></li>
+            <li><svg aria-hidden="true"><use href="#i-trend"/></svg><span><strong>Real interviews feed practice.</strong> Debrief questions go straight into your question bank.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screens" aria-labelledby="screens-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Screens</span>
+        <h2 id="screens-title">A look around the app</h2>
+        <p>These screenshots were taken with built-in rules only (no AI model running). With Ollama or Claude, the same screens show model-written analysis and feedback.</p>
+      </div>
+      <div class="gallery">
+        <figure><a href="img/prep.webp"><img src="img/prep.webp" width="2400" height="1500" loading="lazy" alt="Prep overview: candidate profile, job analysis with competencies, fit score with strengths and gaps."></a><figcaption><strong>Prep pack.</strong> Profile, role analysis, fit and honest gaps.</figcaption></figure>
+        <figure><a href="img/practice.webp"><img src="img/practice.webp" width="2400" height="1500" loading="lazy" alt="Mock interview: question card, live coaching panel with STAR chips, answer box."></a><figcaption><strong>Mock interview.</strong> The question is read aloud, with live coaching while you answer.</figcaption></figure>
+        <figure><a href="img/debrief.webp"><img src="img/debrief.webp" width="2400" height="1500" loading="lazy" alt="Coach's debrief: overall score, rubric score bars, evidence quotes and a stronger answer outline."></a><figcaption><strong>Coach's debrief.</strong> Scores, evidence from your answer and a stronger structure.</figcaption></figure>
+        <figure><a href="img/progress.webp"><img src="img/progress.webp" width="2400" height="1500" loading="lazy" alt="Progress: session scores over time and competency bars with review dates."></a><figcaption><strong>Progress.</strong> Scores over time and what's due for review.</figcaption></figure>
+        <figure><a href="img/meeting-live.webp"><img src="img/meeting-live.webp" width="2400" height="1500" loading="lazy" alt="Live meeting: consent confirmed badge, Me and Them transcript, your notes, search what was said."></a><figcaption><strong>Live meeting.</strong> Consent, Me/Them transcript, your notes and search.</figcaption></figure>
+        <figure><a href="img/meeting-notes.webp"><img src="img/meeting-notes.webp" width="2400" height="1500" loading="lazy" alt="Meeting notes: your bullets and AI bullets with source links, decisions and action items."></a><figcaption><strong>Enhanced notes.</strong> Your bullets, plus AI additions linked to the transcript.</figcaption></figure>
+        <figure><a href="img/home.webp"><img src="img/home.webp" width="2400" height="1500" loading="lazy" alt="Home dashboard with quick actions, recent targets, sessions and meetings."></a><figcaption><strong>Home.</strong> Quick actions, recent work and what's due.</figcaption></figure>
+        <figure><a href="img/system.webp"><img src="img/system.webp" width="2400" height="1500" loading="lazy" alt="System page: provider health, agent table with stats, routing, traces and evals."></a><figcaption><strong>System.</strong> Agents, routing, traces, evals and feedback.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="compare" aria-labelledby="compare-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Demo vs full app</span>
+        <h2 id="compare-title">Try it here, run it at home</h2>
+        <p>The live demo is the real interface running entirely in your browser. The full app adds local AI and private transcription.</p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col"></th><th scope="col">Live demo (this site)</th><th scope="col">Full app on your PC</th></tr></thead>
+          <tbody>
+            <tr><td>Setup</td><td>None. Open <a href="app/">the demo</a></td><td>One command on Windows (<a href="#install">below</a>)</td></tr>
+            <tr><td>AI</td><td>Built-in rules</td><td>Ollama on your GPU (<code>qwen3:14b</code> by default), Claude optional, with the rules as a fallback</td></tr>
+            <tr><td>Speech-to-text</td><td>Your browser's speech recognition, mic only (Chrome and Edge send audio to their cloud service)</td><td>Local Whisper on your GPU (private), from your mic and from meeting audio</td></tr>
+            <tr><td>Your data</td><td>Stays in this browser's local storage</td><td>Stays in a folder on your PC, e.g. <code>D:\Interview APP\data</code></td></tr>
+            <tr><td>Resumes</td><td>Paste text</td><td>Paste, or upload PDF / DOCX / TXT</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="install" aria-labelledby="install-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Install &amp; run locally</span>
+        <h2 id="install-title">Install on Windows</h2>
+        <p>The app runs on your PC and opens in your browser at <code>http://127.0.0.1:8765</code>. That address only works on the computer running the app.</p>
+      </div>
+      <div class="install-grid">
+        <div class="stack">
+          <div class="card">
+            <h3>Option A: one command</h3>
+            <p>Open <strong>PowerShell</strong> and run:</p>
+            <div class="cmd"><code>powershell -ExecutionPolicy Bypass -c "irm https://manish-genai.github.io/interview-app-site/install.ps1 | iex"</code><button class="copy" type="button" data-copy='powershell -ExecutionPolicy Bypass -c "irm https://manish-genai.github.io/interview-app-site/install.ps1 | iex"'>Copy</button></div>
+            <ol class="steps-list">
+              <li>Checks for Git and Python and offers to install them with <code>winget</code> if they're missing.</li>
+              <li>Downloads the app into <code>D:\Interview APP</code>, or <code>%USERPROFILE%\Interview APP</code> if there's no D: drive. <strong>The source repository is private</strong>, so Git asks you to sign in to GitHub once (Git Credential Manager opens a browser window).</li>
+              <li>Installs the Python packages, local Whisper speech-to-text and the Ollama models. It offers to install Ollama if it's missing.</li>
+              <li>Adds an <strong>Interview App</strong> shortcut to your desktop and starts the app.</li>
+            </ol>
+          </div>
+          <div class="card">
+            <h3>Option B: step by step</h3>
+            <p>With Git and Python already installed, run these one at a time:</p>
+            <div class="cmd"><code>git clone -b claude/sweet-pascal-pnr2pl https://github.com/Manish-GenAI/Interview-App.git "D:\Interview APP"</code><button class="copy" type="button" data-copy='git clone -b claude/sweet-pascal-pnr2pl https://github.com/Manish-GenAI/Interview-App.git "D:\Interview APP"'>Copy</button></div>
+            <div class="cmd"><code>cd "D:\Interview APP"</code><button class="copy" type="button" data-copy='cd "D:\Interview APP"'>Copy</button></div>
+            <div class="cmd"><code>scripts\setup.bat</code><button class="copy" type="button" data-copy="scripts\setup.bat">Copy</button></div>
+            <div class="cmd"><code>scripts\start.bat</code><button class="copy" type="button" data-copy="scripts\start.bat">Copy</button></div>
+            <p class="small muted">Keep the start window open. When it says <strong>Ready</strong>, your browser opens <code>http://127.0.0.1:8765</code>. Use the desktop shortcut or <code>scripts\start.bat</code> next time.</p>
+          </div>
+          <div class="callout info"><svg aria-hidden="true"><use href="#i-info"/></svg><div><p><strong>This site is public, the code is not.</strong> GitHub Pages sites are public even when the repository is private, so anyone with the link can see this page, the docs and the demo.</p><p>The demo keeps everything you type in your own browser and sends nothing to a server. The exception is the microphone: it uses your browser's speech recognition, which in Chrome and Edge is a cloud service.</p></div></div>
+        </div>
+        <div class="stack">
+          <div class="card">
+            <h3>What you need</h3>
+            <ul class="req">
+              <li>Windows 10 or 11 (Linux, macOS and WSL also work with <code>scripts/setup.sh</code>)</li>
+              <li>Python 3.11 or 3.12, and Git</li>
+              <li>Chrome or Edge (needed to capture meeting audio)</li>
+              <li><a href="https://ollama.com/download">Ollama</a> for local AI (recommended)</li>
+              <li>An NVIDIA GPU is recommended. An RTX 4080 (16 GB) runs everything comfortably</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Recommended for an RTX 4080</h3>
+            <div class="table-wrap">
+              <table>
+                <tbody>
+                  <tr><td>Main model</td><td><code>qwen3:14b</code> (default, pulled by setup). It reliably follows JSON and fits in 16 GB alongside Whisper</td></tr>
+                  <tr><td>Fast tier</td><td>Live hints and catch-me-up use the same model by default (one model in VRAM). You can set a separate fast model in Settings; if it isn't pulled, the main model answers</td></tr>
+                  <tr><td>Embeddings</td><td><code>nomic-embed-text</code> for semantic meeting search</td></tr>
+                  <tr><td>Speech</td><td>Whisper <code>large-v3-turbo</code> in float16 (~2.5 GB VRAM). Without a GPU it falls back to a small English model on the CPU</td></tr>
+                  <tr><td>VRAM tip</td><td><code>scripts\setup.bat -TuneOllama</code> turns on flash attention and an 8-bit KV cache</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="small muted" style="margin-top:12px">Newer models such as <code>qwen3.5:9b</code> or <code>gemma4:12b</code> can be chosen in Settings if <code>ollama list</code> shows them.</p>
+          </div>
+          <div class="card">
+            <h3>Claude (optional)</h3>
+            <p>Add an Anthropic API key in <strong>Settings</strong> and choose the order: Ollama first with Claude as fallback, or the reverse. The default model is <code>claude-opus-5-5</code>. A <strong>monthly budget guard</strong> (default $50, adjustable) switches back to Ollama when it's reached. Only the text of each request is sent.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="privacy" aria-labelledby="privacy-title">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Privacy &amp; responsible use</span>
+        <h2 id="privacy-title">Practise for the interview. Be honest in the meeting.</h2>
+        <p>It's built for preparation and transparent note-taking. There's no stealth mode, and it doesn't feed answers during live interviews or meetings.</p>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3><span class="icon-badge" style="background:var(--ok-soft);color:var(--ok)"><svg aria-hidden="true"><use href="#i-shield"/></svg></span>Transparent by design</h3>
+          <ul>
+            <li>Consent is confirmed before every meeting, a <strong>Transcribing</strong> indicator stays visible, and a disclosure line is ready to paste.</li>
+            <li>Live hints exist only in practice sessions. During meetings you can only search or recap what was already said. AI Q&amp;A unlocks once the meeting is saved.</li>
+            <li>It doesn't hide from screen sharing or recording, and it never joins calls as a bot.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3><span class="icon-badge" style="background:var(--accent-soft);color:var(--accent)"><svg aria-hidden="true"><use href="#i-lock"/></svg></span>Your data stays yours</h3>
+          <ul>
+            <li>Everything is stored locally. Audio is never stored, only text.</li>
+            <li>Delete the last few minutes of a transcript at any time, delete whole meetings, or set retention days.</li>
+            <li>Nothing leaves your PC unless you turn on Claude, and then only the text of each request is sent.</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top:20px"><a href="docs/responsible-use.html">Read the responsible-use and consent guide →</a></p>
+    </div>
+  </section>
+
+  <section id="faq" aria-labelledby="faq-title" class="faq">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">FAQ</span>
+        <h2 id="faq-title">Questions and troubleshooting</h2>
+      </div>
+      <details><summary>Why doesn't http://127.0.0.1:8765 open on my phone or another computer?</summary><p><code>127.0.0.1</code> always means "this device". The link works only on the PC where the app is running (<code>scripts\start.bat</code> or the desktop shortcut), while its window stays open. To try the app anywhere else, use the <a href="app/">live demo</a>.</p></details>
+      <details><summary>The app says "Built-in rules". How do I get AI results?</summary><p>No model is reachable yet. Install and start Ollama, then run <code>ollama pull qwen3:14b</code>, or add a Claude API key in Settings. Then open System → <em>Test connections</em>.</p></details>
+      <details><summary>Do I need a GPU?</summary><p>No, but it helps a lot. Without one, Ollama runs slowly on the CPU, Whisper uses a small English model on the CPU, and you can use Claude or the built-in rules instead. With an RTX 4080, everything runs fast and privately on your PC.</p></details>
+      <details><summary>Where is my data stored?</summary><p>In the app's <code>data</code> folder, e.g. <code>D:\Interview APP\data</code>. It holds the database, your settings, your API key (if you add one) and downloaded speech models. Audio is never saved.</p></details>
+      <details><summary>What does it cost?</summary><p>Running locally with Ollama costs nothing beyond your electricity. Claude is optional and billed by Anthropic per request. The app estimates spend and stops using Claude at your monthly budget.</p></details>
+      <details><summary>Can I use it during a real interview?</summary><p>No. It's for preparing beforehand and debriefing afterwards. It has no live-answer feature and no stealth mode. Using hidden AI help in an interview misrepresents your abilities and usually breaks the hiring process's rules.</p></details>
+      <details><summary>Meeting audio isn't captured</summary><p>In the browser's share dialog, tick <em>Share tab audio</em> for browser-based calls. For the desktop Zoom or Teams apps, share <em>Entire screen</em> and tick <em>Share system audio</em>. Use headphones so the other side isn't picked up twice by your mic.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div>
+      <strong style="color:var(--fg)">Interview App</strong><br>
+      Local-first practice coach and meeting notes. FastAPI · SQLite · Ollama · faster-whisper.
+    </div>
+    <nav aria-label="Footer">
+      <a href="app/">Live demo</a>
+      <a href="#install">Install</a>
+      <a href="docs/architecture.html">Architecture</a>
+      <a href="docs/api.html">API</a>
+      <a href="docs/research.html">Research</a>
+      <a href="docs/responsible-use.html">Responsible use</a>
+      <a href="https://github.com/Manish-GenAI/Interview-App/tree/claude/sweet-pascal-pnr2pl">Source (private repository)</a>
+    </nav>
+  </div>
+</footer>
+<script src="js/site.js" defer></script>
+</body>
+</html>
